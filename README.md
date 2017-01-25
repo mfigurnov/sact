@@ -1,12 +1,12 @@
 Code for "Spatially Adaptive Computation Time for Residual Networks."
 
+https://arxiv.org/abs/1612.02297
+
 This code implements a deep learning architecture based on Residual Network that
 dynamically adjusts the number of executed layers for the regions of the image.
 The architecture is end-to-end trainable, deterministic and problem-agnostic.
 The included code applies this to the CIFAR-10 an ImageNet image classification
 problems. It is implemented using TensorFlow and TF-Slim.
-
-TODO: Add link to the arXiv paper
 
 SETUP
 ==========

@@ -56,17 +56,17 @@ class ResNetActCifarModelTest(tf.test.TestCase):
           labels = tf.random_uniform(
               (batch_size,), maxval=num_classes, dtype=tf.int32)
           one_hot_labels = slim.one_hot_encoding(labels, num_classes)
-          slim.losses.softmax_cross_entropy(
-              logits, one_hot_labels, label_smoothing=0.1, weight=1.0)
+          tf.losses.softmax_cross_entropy(
+              logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
           if use_act:
-            resnet_act_utils.add_all_ponder_costs(end_points, weight=1.0)
-          total_loss = slim.losses.get_total_loss()
+            resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+          total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
-          sess.run(tf.initialize_all_variables())
+          sess.run(tf.global_variables_initializer())
           sess.run((train_op, metrics))
         else:
-          sess.run(tf.initialize_all_variables())
+          sess.run(tf.global_variables_initializer())
           logits_out, metrics_out = sess.run((logits, metrics))
           self.assertEqual(logits_out.shape, (batch_size, num_classes))
 
@@ -136,16 +136,16 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
           labels = tf.random_uniform(
               (batch_size,), maxval=num_classes, dtype=tf.int32)
           one_hot_labels = slim.one_hot_encoding(labels, num_classes)
-          slim.losses.softmax_cross_entropy(
-              logits, one_hot_labels, label_smoothing=0.1, weight=1.0)
-          resnet_act_utils.add_all_ponder_costs(end_points, weight=1.0)
-          total_loss = slim.losses.get_total_loss()
+          tf.losses.softmax_cross_entropy(
+              logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
+          resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+          total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
-          sess.run(tf.initialize_all_variables())
+          sess.run(tf.global_variables_initializer())
           sess.run((train_op, metrics))
         else:
-          sess.run(tf.initialize_all_variables())
+          sess.run(tf.global_variables_initializer())
           logits_out, metrics_out = sess.run((logits, metrics))
           self.assertEqual(logits_out.shape, (batch_size, num_classes))
 
@@ -198,7 +198,7 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
             alpha=0.75,
             border=border)
 
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         vis_ponder_out, vis_timesteps_out = sess.run(
             [vis_ponder, vis_timesteps])
         self.assertEqual(vis_ponder_out.shape,

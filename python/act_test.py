@@ -43,7 +43,7 @@ class ActTest(tf.test.TestCase):
     batch_size = 2
     max_timesteps = 8
     h = tf.sigmoid(tf.random_normal(shape=[1, max_timesteps - 1]))
-    h = tf.tile(h, tf.pack([batch_size, 1]))
+    h = tf.tile(h, tf.stack([batch_size, 1]))
     (cost, num_timesteps, distrib) = act.adaptive_computation_time(h)
     with self.test_session() as sess:
       (cost_out, num_timesteps_out, distrib_out) = sess.run(
@@ -128,8 +128,8 @@ class ActWrapperTest(tf.test.TestCase):
 
     def timestep(x, timestep_idx):
       return (
-          tf.reshape(timestep_outputs_tf[:, timestep_idx], tf.pack([-1, 1])),
-          tf.reshape(halting_probas_tf[:, timestep_idx], tf.pack([-1, 1])),
+          tf.reshape(timestep_outputs_tf[:, timestep_idx], tf.stack([-1, 1])),
+          tf.reshape(halting_probas_tf[:, timestep_idx], tf.stack([-1, 1])),
           flops_tf[:, timestep_idx])
 
     inputs = tf.random_normal(shape=[batch, 1])
@@ -137,7 +137,7 @@ class ActWrapperTest(tf.test.TestCase):
     ) = act.adaptive_computation_time_wrapper(inputs, timestep, max_timesteps)
     cost_grad = tf.gradients(cost, halting_probas_tf)
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       return sess.run((cost, num_timesteps, flops, distrib, outputs, cost_grad))
 
   def testEqualValuesInBatch(self):
@@ -212,7 +212,7 @@ class ActWrapperTest(tf.test.TestCase):
                                                                   timestep, 5)
     decay_cost = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       (_, decay_cost_out) = sess.run((outputs, decay_cost))
       self.assertEqual(decay_cost_out, 5.0)
 
@@ -275,7 +275,7 @@ class ActConvTest(tf.test.TestCase):
     probas = tf.reshape(probas, [max_timesteps - 1, 2 * 5 * 3])
     probas = tf.nn.softmax(probas)
     probas = tf.reshape(probas, [max_timesteps - 1, 2, 5, 3])
-    probas = tf.concat(0, [probas, tf.zeros([1, 2, 5, 3])])
+    probas = tf.concat([probas, tf.zeros([1, 2, 5, 3])], 0)
 
     def timestep(x, timestep_idx, residual_mask):
       return (x, tf.reshape(probas[timestep_idx, :, :, :], [2, 5, 3, 1]),
@@ -353,8 +353,8 @@ class ActEarlyStoppingTest(tf.test.TestCase):
       assign_op = timestep_counter.assign_add(1)
       with tf.control_dependencies([assign_op]):
         return (
-            tf.reshape(timestep_outputs_tf[:, timestep_idx], tf.pack([-1, 1])),
-            tf.reshape(halting_probas_tf[:, timestep_idx], tf.pack([-1, 1])),
+            tf.reshape(timestep_outputs_tf[:, timestep_idx], tf.stack([-1, 1])),
+            tf.reshape(halting_probas_tf[:, timestep_idx], tf.stack([-1, 1])),
             flops_tf[:, timestep_idx])
 
     inputs = tf.random_normal(shape=[batch, 1])
@@ -362,7 +362,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
     ) = act.adaptive_computation_early_stopping(inputs, timestep, max_timesteps)
     cost_grad = tf.gradients(cost, halting_probas_tf)
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       return sess.run((cost, num_timesteps, flops, distrib, outputs, cost_grad,
                        timestep_counter))
 
@@ -442,7 +442,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
                                                                     timestep, 5)
     decay_cost = tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       (outputs_out, decay_cost_out) = sess.run((outputs, decay_cost))
       self.assertEqual(decay_cost_out, 5.0)
 

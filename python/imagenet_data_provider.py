@@ -26,12 +26,12 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 from tensorflow.contrib.slim import dataset_data_provider
 
-from tensorflow_models.inception.inception import image_processing
-from tensorflow_models.slim.datasets import imagenet
+from external import inception_preprocessing
+from external import datasets_imagenet
 
 
 def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
-                 num_readers=1, num_preprocess_threads=1, image_size=299):
+                 num_readers=1, num_preprocessing_threads=1, image_size=224):
   """Provides batches of Imagenet data.
 
   Applies the processing in
@@ -45,7 +45,7 @@ def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
                  Defaults to "~/tensorflow/data/imagenet"
     is_training: Whether to apply data augmentation and shuffling.
     num_readers: Number of parallel readers.
-    num_preprocess_threads: Number of preprocessing threads.
+    num_preprocessing_threads: Number of preprocessing threads.
 
   Returns:
     images: A `Tensor` of size [batch_size, image_size, image_size, 3]
@@ -58,35 +58,30 @@ def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
     ValueError: if the split_name is not either 'train' or 'validation'.
   """
 
-  if dataset_dir is None:
-    dataset_dir = os.path.expanduser('~/tensorflow/data/imagenet')
+  with tf.device('/cpu:0'):
+    if dataset_dir is None:
+      dataset_dir = os.path.expanduser('~/tensorflow/data/imagenet')
 
-  dataset = imagenet.get_split(split_name, dataset_dir)
-  provider = dataset_data_provider.DatasetDataProvider(
-      dataset,
-      num_readers=num_readers,
-      shuffle=is_training,
-      common_queue_capacity=5 * batch_size,
-      common_queue_min=batch_size)
+    dataset = datasets_imagenet.get_split(split_name, dataset_dir)
+    provider = dataset_data_provider.DatasetDataProvider(
+        dataset,
+        num_readers=num_readers,
+        shuffle=is_training,
+        common_queue_capacity=20 * batch_size,
+        common_queue_min=10 * batch_size)
 
-  images_and_labels = []
-  for thread_id in range(num_preprocess_threads):
     [image, bbox, label] = provider.get(['image', 'object/bbox', 'label'])
-    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-    if is_training:
-      image = image_processing.distort_image(
-          image, image_size, image_size, tf.expand_dims(bbox, 0), thread_id)
-    else:
-      image = image_processing.eval_image(image, image_size, image_size)
-    image = tf.sub(image, 0.5)
-    image = tf.mul(image, 2.0)
-    images_and_labels.append([image, label])
+    bbox = tf.expand_dims(bbox, 0)
 
-  images, labels = tf.train.batch_join(
-      images_and_labels,
-      batch_size=batch_size,
-      capacity=(2 * num_preprocess_threads * batch_size))
+    image = inception_preprocessing.preprocess_image(
+      image, image_size, image_size, is_training, bbox, fast_mode=True)
 
-  tf.image_summary('images', images)
-  one_hot_labels = slim.one_hot_encoding(labels, dataset.num_classes)
+    images, labels = tf.train.batch(
+        [image, label],
+        batch_size=batch_size,
+        num_threads=num_preprocessing_threads,
+        capacity=5 * batch_size)
+
+    one_hot_labels = tf.one_hot(labels, dataset.num_classes)
+
   return images, one_hot_labels, dataset.num_samples, dataset.num_classes

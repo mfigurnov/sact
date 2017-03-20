@@ -31,52 +31,52 @@ import imagenet_data_provider
 import resnet_act_imagenet_model
 import resnet_act_utils
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
-tf.flags.DEFINE_string('master', '',
+tf.app.flags.DEFINE_string('master', '',
                        'Name of the TensorFlow master to use.')
 
-tf.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet/',
                        'Directory where the model was written to.')
 
-tf.flags.DEFINE_string('eval_dir', '/tmp/resnet/',
+tf.app.flags.DEFINE_string('eval_dir', '/tmp/resnet/',
                        'Directory where the results are saved to.')
 
-tf.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
+tf.app.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
 
-tf.flags.DEFINE_integer('eval_interval_secs', 600,
+tf.app.flags.DEFINE_integer('eval_interval_secs', 600,
                         'The frequency, in seconds, with which evaluation is run.')
 
-tf.flags.DEFINE_integer('num_examples', 50000,
+tf.app.flags.DEFINE_integer('num_examples', 50000,
                         'The number of examples to evaluate')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'split_name', 'validation',
     'The name of the train/test split, either \'train\' or \'validation\'.')
 
-tf.flags.DEFINE_float('moving_average_decay', 0.9999,
+tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
                       'The decay to use for the moving average.')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'num_layers', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
-tf.flags.DEFINE_bool('use_act', True, 'Use ACT?')
+tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
 
-tf.flags.DEFINE_bool(
+tf.app.flags.DEFINE_bool(
     'conv_act', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
                         'Kernel size for spatially ACT.')
 
-tf.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
-tf.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
+tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
-tf.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?')
+tf.app.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?')
 
 
 def main(_):

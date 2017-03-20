@@ -29,89 +29,89 @@ import resnet_act_cifar_model as resnet
 import resnet_act_utils
 
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
 # General settings
-tf.flags.DEFINE_string('mode', 'train', 'One of "train" or "eval".')
+tf.app.flags.DEFINE_string('mode', 'train', 'One of "train" or "eval".')
 
 # Training settings
-tf.flags.DEFINE_integer('batch_size', 128,
+tf.app.flags.DEFINE_integer('batch_size', 128,
                         'The number of images in each batch.')
 
 
-tf.flags.DEFINE_string('master', '',
+tf.app.flags.DEFINE_string('master', '',
                        'Name of the TensorFlow master to use.')
 
-tf.flags.DEFINE_string('train_log_dir', '/tmp/resnet_act_cifar/',
+tf.app.flags.DEFINE_string('train_log_dir', '/tmp/resnet_act_cifar/',
                        'Directory where to write event logs.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'save_summaries_secs', 30,
     'The frequency with which summaries are saved, in seconds.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'save_interval_secs', 60,
     'The frequency with which the model is saved, in seconds.')
 
-tf.flags.DEFINE_integer('max_number_of_steps', 100000,
+tf.app.flags.DEFINE_integer('max_number_of_steps', 100000,
                         'The maximum number of gradient steps.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'ps_tasks', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'dataset_dir', None,
     'Directory with CIFAR-10 data, should contain files '
     '"cifar10_train.tfrecord" and "cifar10_test.tfrecord".')
 
 # Evaluation settings
-tf.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet_act_cifar/',
+tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet_act_cifar/',
                        'Directory where the model was written to.')
 
-tf.flags.DEFINE_string('eval_dir', '/tmp/resnet_act_cifar/',
+tf.app.flags.DEFINE_string('eval_dir', '/tmp/resnet_act_cifar/',
                        'Directory where the results are saved to.')
 
-tf.flags.DEFINE_integer('eval_batch_size', 100,
+tf.app.flags.DEFINE_integer('eval_batch_size', 100,
                         'The number of images in each batch for evaluation.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'eval_interval_secs', 60,
     'The frequency, in seconds, with which evaluation is run.')
 
-tf.flags.DEFINE_string('split_name', 'test', """Either 'train' or 'test'.""")
+tf.app.flags.DEFINE_string('split_name', 'test', """Either 'train' or 'test'.""")
 
-tf.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?')
+tf.app.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?')
 
 # Model settings
-tf.flags.DEFINE_bool('use_act', False, 'Use ACT?')
+tf.app.flags.DEFINE_bool('use_act', False, 'Use ACT?')
 
-tf.flags.DEFINE_bool(
+tf.app.flags.DEFINE_bool(
     'conv_act', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
                         'Kernel size for spatially ACT.')
 
-tf.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
-tf.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
+tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
-tf.flags.DEFINE_float('learning_rate_mult', 1.0,
+tf.app.flags.DEFINE_float('learning_rate_mult', 1.0,
                       'Multiplier for learning rate.')
 
-tf.flags.DEFINE_string('num_residual_units', '18',
+tf.app.flags.DEFINE_string('num_residual_units', '18',
                        'An underscore separated string, number of residual '
                        'units in each block.')
 
-tf.flags.DEFINE_string('finetune_path', '',
+tf.app.flags.DEFINE_string('finetune_path', '',
                        'Path for the initial checkpoint for finetuning.')
 
 

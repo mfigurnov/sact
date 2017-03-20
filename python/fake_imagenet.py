@@ -34,10 +34,10 @@ import tensorflow as tf
 from inception.inception.data import build_imagenet_data
 
 
-tf.flags.DEFINE_string('out_directory', 'testdata/imagenet',
+tf.app.flags.DEFINE_string('out_directory', 'testdata/imagenet',
                        'Output directory for the test data.')
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
 
 def _random_bounds(n):

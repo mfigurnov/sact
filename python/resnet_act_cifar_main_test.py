@@ -25,7 +25,7 @@ import tensorflow as tf
 import resnet_act_cifar_main
 
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
 
 class ResNetActCifarMainTest(tf.test.TestCase):

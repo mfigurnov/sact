@@ -33,10 +33,10 @@ import tensorflow as tf
 
 from tensorflow_models.slim.datasets import dataset_utils
 
-tf.flags.DEFINE_string('out_directory', 'testdata/cifar10',
+tf.app.flags.DEFINE_string('out_directory', 'testdata/cifar10',
                        'Output directory for the test data.')
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
 
 _IMAGE_SIZE = 32

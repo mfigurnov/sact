@@ -27,23 +27,24 @@ import imagenet_data_provider
 
 class ImagenetDataProviderTest(tf.test.TestCase):
 
-  def _testImageNet(self, split_name, expected_num_samples):
+  def _testImageNet(self, split_name, is_training, expected_num_samples):
     images, one_hot_labels, num_samples, num_classes = \
         imagenet_data_provider.provide_data(split_name, 1,
-                                            dataset_dir='testdata/imagenet')
+                                            dataset_dir='testdata/imagenet',
+                                            is_training=is_training)
     self.assertEqual(num_samples, expected_num_samples)
     self.assertEqual(num_classes, 1001)
     with self.test_session() as sess:
       with slim.queues.QueueRunners(sess):
         images_out, one_hot_labels_out = sess.run([images, one_hot_labels])
-        self.assertEqual(images_out.shape, (1, 299, 299, 3))
+        self.assertEqual(images_out.shape, (1, 224, 224, 3))
         self.assertEqual(one_hot_labels_out.shape, (1, 1001))
 
   def testImageNetTrainSet(self):
-    self._testImageNet('train', 1281167)
+    self._testImageNet('train', True, 1281167)
 
   def testImageNetValidationSet(self):
-    self._testImageNet('validation', 50000)
+    self._testImageNet('validation', False, 50000)
 
 
 if __name__ == '__main__':

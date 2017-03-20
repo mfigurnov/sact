@@ -24,7 +24,7 @@ import tensorflow as tf
 import resnet_act_imagenet_train
 
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
 
 class ResNetActImagenetTest(tf.test.TestCase):

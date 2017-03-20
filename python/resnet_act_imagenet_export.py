@@ -31,38 +31,38 @@ import imagenet_data_provider
 import resnet_act_imagenet_model
 import resnet_act_utils
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
-tf.flags.DEFINE_integer('num_examples', 1000, 'The number of examples to evaluate')
+tf.app.flags.DEFINE_integer('num_examples', 1000, 'The number of examples to evaluate')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'split_name', 'validation',
     'The name of the train/test split, either \'train\' or \'validation\'.')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'num_layers', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
-tf.flags.DEFINE_bool('use_act', True, 'Use ACT?')
+tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
 
-tf.flags.DEFINE_bool(
+tf.app.flags.DEFINE_bool(
     'conv_act', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
                        'Kernel size for spatially ACT.')
 
-tf.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
-tf.flags.DEFINE_string('checkpoint_path', '',
+tf.app.flags.DEFINE_string('checkpoint_path', '',
                        'Path for the checkpoint to process.')
 
-tf.flags.DEFINE_string('export_path', '',
+tf.app.flags.DEFINE_string('export_path', '',
                        'Path to write the hdf5 file with exported data.')
 
-tf.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
+tf.app.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
 
 
 def main(_):

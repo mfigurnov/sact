@@ -29,85 +29,88 @@ import imagenet_data_provider
 import resnet_act_imagenet_model
 import resnet_act_utils
 
-FLAGS = tf.flags.FLAGS
+FLAGS = tf.app.flags.FLAGS
 
-tf.flags.DEFINE_string('master', '',
+tf.app.flags.DEFINE_string('master', '',
                        'Name of the TensorFlow master to use.')
 
-tf.flags.DEFINE_string('train_log_dir', '/tmp/resnet/',
+tf.app.flags.DEFINE_string('train_log_dir', '/tmp/resnet/',
                        'Directory where to write event logs.')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'split_name', 'train',
     """The name of the train/test split, either 'train' or 'validation'.""")
 
-tf.flags.DEFINE_integer('worker_replicas', 1, 'Number of worker replicas.')
+tf.app.flags.DEFINE_integer('worker_replicas', 1, 'Number of worker replicas.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'ps_tasks', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'save_summaries_secs', 600,
     'The frequency with which summaries are saved, in seconds.')
 
-tf.flags.DEFINE_integer('save_interval_secs', 600,
+tf.app.flags.DEFINE_integer('save_interval_secs', 600,
                        'The frequency with which the model is saved, in seconds.')
 
-tf.flags.DEFINE_integer('startup_delay_steps', 15,
+tf.app.flags.DEFINE_integer('startup_delay_steps', 15,
                        'Number of training steps between replicas startup.')
 
-tf.flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
+tf.app.flags.DEFINE_integer('task', 0, 'Task id of the replica running the training.')
 
-tf.flags.DEFINE_string('dataset_dir', None, 'Directory with ImageNet data.')
+tf.app.flags.DEFINE_string('dataset_dir', None, 'Directory with ImageNet data.')
 
 # Training parameters.
-tf.flags.DEFINE_float('learning_rate', 0.045, """Initial learning rate.""")
+tf.app.flags.DEFINE_integer('batch_size', 32,
+                        'The number of images in each batch.')
 
-tf.flags.DEFINE_float('momentum', 0.9, """Momentum.""")
+tf.app.flags.DEFINE_float('learning_rate', 0.05, """Initial learning rate.""")
 
-tf.flags.DEFINE_float('learning_rate_decay_factor', 0.1,
+tf.app.flags.DEFINE_float('momentum', 0.9, """Momentum.""")
+
+tf.app.flags.DEFINE_float('learning_rate_decay_factor', 0.1,
                       'Learning rate decay factor.')
 
-tf.flags.DEFINE_float('num_epochs_per_decay', 30.0,
+tf.app.flags.DEFINE_float('num_epochs_per_decay', 30.0,
                       'Number of epochs after which learning rate decays.')
 
-tf.flags.DEFINE_bool('sync_replicas', False,
+tf.app.flags.DEFINE_bool('sync_replicas', False,
                      'Whether or not to synchronize the replicas during training.')
 
-tf.flags.DEFINE_integer(
+tf.app.flags.DEFINE_integer(
     'replicas_to_aggregate', 1,
     'The Number of gradients to collect before updating params.')
 
-tf.flags.DEFINE_float('moving_average_decay', 0.9999,
+tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
                      'The decay to use for the moving average.')
 
-tf.flags.DEFINE_string(
+tf.app.flags.DEFINE_string(
     'num_layers', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
-tf.flags.DEFINE_bool('use_act', True, 'Use ACT?')
+tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
 
-tf.flags.DEFINE_bool(
+tf.app.flags.DEFINE_bool(
     'conv_act', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
                         'Kernel size for spatially ACT.')
 
-tf.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
-tf.flags.DEFINE_float('tau', 1.0, 'Target value of tau (ponder relative cost).')
+tf.app.flags.DEFINE_float('tau', 1.0, 'Target value of tau (ponder relative cost).')
 
-tf.flags.DEFINE_float(
+tf.app.flags.DEFINE_float(
     'num_increase_tau_epochs', 0.0,
     'Increase ponder cost penalty from 0 to tau with a linear schedule over'
     ' this many epochs.')
 
-tf.flags.DEFINE_string('finetune_path', '',
+tf.app.flags.DEFINE_string('finetune_path', '',
                        'Path for the initial checkpoint for finetuning.')
 
 

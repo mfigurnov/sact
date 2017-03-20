@@ -155,19 +155,19 @@ def train():
             conv_act=FLAGS.conv_act)
 
         # Specify the loss function:
-        slim.losses.softmax_cross_entropy(logits, one_hot_labels)
+        tf.losses.softmax_cross_entropy(logits, one_hot_labels)
         if FLAGS.use_act:
           tau = get_tau_value()
-          tf.scalar_summary('training/tau', tau)
-          resnet_act_utils.add_all_ponder_costs(end_points, weight=tau)
-        total_loss = slim.losses.get_total_loss()
-        tf.scalar_summary('Total Loss', total_loss)
+          tf.summary.scalar('training/tau', tau)
+          resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
+        total_loss = tf.losses.get_total_loss()
+        tf.summary.scalar('Total Loss', total_loss)
 
         metric_map = {}  # resnet_act_utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
           metric_map.update(resnet_act_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
-          tf.scalar_summary(name, value)
+          tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.conv_act:
           resnet_act_utils.add_heatmaps_image_summary(end_points)
@@ -187,7 +187,7 @@ def train():
           values = [x * FLAGS.learning_rate_mult for x in values]
         learning_rate = tf.train.piecewise_constant(global_step, boundaries,
                                                     values)
-        tf.scalar_summary('Learning Rate', learning_rate)
+        tf.summary.scalar('Learning Rate', learning_rate)
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
 
         # Set up training.
@@ -235,12 +235,12 @@ def evaluate():
 
       predictions = tf.argmax(logits, 1)
 
-      slim.losses.softmax_cross_entropy(logits, one_hot_labels)
+      tf.losses.softmax_cross_entropy(logits, one_hot_labels)
       if FLAGS.use_act:
         tau = get_tau_value()
         resnet_act_utils.add_all_ponder_costs(end_points, weight=tau)
 
-      loss = slim.losses.get_total_loss()
+      loss = tf.losses.get_total_loss()
 
       # Define the metrics:
       labels = tf.argmax(one_hot_labels, 1)
@@ -255,7 +255,7 @@ def evaluate():
           metric_map)
 
       for name, value in names_to_values.iteritems():
-        summ = tf.scalar_summary(name, value, collections=[])
+        summ = tf.summary.scalar(name, value, collections=[])
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 

@@ -30,16 +30,16 @@ import act
 import flopsometer
 
 
-def add_all_ponder_costs(end_points, weight):
+def add_all_ponder_costs(end_points, weights):
   total_ponder_cost = 0.
   for scope in end_points['block_scopes']:
     ponder_cost = end_points['{}/ponder_cost'.format(scope)]
     total_ponder_cost += tf.reduce_mean(ponder_cost)
-  slim.losses.add_loss(total_ponder_cost * weight)
+  tf.losses.add_loss(total_ponder_cost * weights)
 
 
 def moments_metric_map(x, name, delimiter='_', do_shift=False):
-  tf.histogram_summary(name, x)
+  tf.summary.histogram(name, x)
 
   if do_shift:
     shift = tf.reduce_mean(x)  # Seems to help numerical issues, but slower
@@ -315,15 +315,15 @@ def conv_act_image_heatmap(end_points,
     # We simply resize the map to the image size.
     h = tf.image.resize_nearest_neighbor(h, resolution, align_corners=False)
     # Heatmap is in Red channel. Fill Blue and Green channels with zeros.
-    dimensions = tf.pack([num_images, resolution[0], resolution[1], 2])
-    h = tf.concat(3, [h, tf.zeros(dimensions)])
+    dimensions = tf.stack([num_images, resolution[0], resolution[1], 2])
+    h = tf.concat([h, tf.zeros(dimensions)], 3)
     heatmaps.append(h)
 
   im_heatmap = images * (1 - alpha) + tf.add_n(heatmaps) * (alpha / max_value)
 
   # image, black border, image with overlayed heatmap
-  dimensions = tf.pack([num_images, resolution[0], border, 3])
-  ret = tf.concat(2, [images, tf.zeros(dimensions), im_heatmap])
+  dimensions = tf.stack([num_images, resolution[0], border, 3])
+  ret = tf.concat([images, tf.zeros(dimensions), im_heatmap], 2)
 
   return ret
 

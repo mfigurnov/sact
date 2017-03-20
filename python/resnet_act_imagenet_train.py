@@ -144,17 +144,17 @@ def main(_):
             conv_act=FLAGS.conv_act)
 
         # Specify the loss function:
-        slim.losses.softmax_cross_entropy(
-            logits, labels, label_smoothing=0.1, weight=1.0)
+        tf.losses.softmax_cross_entropy(
+            logits, labels, label_smoothing=0.1, weights=1.0)
         if FLAGS.use_act:
           # Linear schedule from 0 to tau
           global_step = tf.to_float(slim.get_or_create_global_step())
           tau_target_step = 1.0 * examples_per_epoch / FLAGS.batch_size \
               * FLAGS.num_increase_tau_epochs
           tau = FLAGS.tau * tf.minimum(1.0, global_step / tau_target_step)
-          tf.scalar_summary('training/tau', tau)
-          resnet_act_utils.add_all_ponder_costs(end_points, weight=tau)
-        total_loss = slim.losses.get_total_loss()
+          tf.summary.scalar('training/tau', tau)
+          resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
+        total_loss = tf.losses.get_total_loss()
 
         # Setup the moving averages:
         moving_average_variables = slim.get_model_variables()
@@ -206,14 +206,14 @@ def main(_):
             gradient_multipliers=gradient_multipliers)
 
         # Summaries:
-        tf.scalar_summary('losses/Total Loss', total_loss)
-        tf.scalar_summary('training/Learning Rate', learning_rate)
+        tf.summary.scalar('losses/Total Loss', total_loss)
+        tf.summary.scalar('training/Learning Rate', learning_rate)
 
         metric_map = {}  # resnet_act_utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
           metric_map.update(resnet_act_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
-          tf.scalar_summary(name, value)
+          tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.conv_act:
           resnet_act_utils.add_heatmaps_image_summary(end_points, border=10)

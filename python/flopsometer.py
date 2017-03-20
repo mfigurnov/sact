@@ -64,7 +64,7 @@ def conv2d(inputs, num_outputs, kernel_size, *args, **kwargs):
   if output_mask is None:
     num_spatial_positions = tf.fill(
         # tf.fill does not support int64 dims :-|
-        dims=tf.to_int32(tf.pack([batch_size])),
+        dims=tf.to_int32(tf.stack([batch_size])),
         value=outputs_shape[1] * outputs_shape[2])
   else:
     num_spatial_positions = tf.reduce_sum(output_mask, [1, 2])

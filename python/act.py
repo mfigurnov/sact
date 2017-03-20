@@ -62,15 +62,15 @@ def adaptive_computation_time(halting_proba, eps=1e-2):
 
   zero_col = tf.zeros((batch, 1))
 
-  halting_padded = tf.concat(1, [halting_proba, zero_col])
+  halting_padded = tf.concat([halting_proba, zero_col], 1)
 
   halting_cumsum = tf.cumsum(halting_proba, axis=1)
-  halting_cumsum_padded = tf.concat(1, [zero_col, halting_cumsum])
+  halting_cumsum_padded = tf.concat([zero_col, halting_cumsum], 1)
 
   # Does computation halt at this timestep?
   halt_flag = (halting_cumsum >= 1 - eps)
   # Always halt at the final timestep.
-  halt_flag_final = tf.concat(1, [halt_flag, tf.fill([batch, 1], True)])
+  halt_flag_final = tf.concat([halt_flag, tf.fill([batch, 1], True)], 1)
 
   # Halting iteration (zero-based), eqn. (7).
   # Add a decaying value that ensures that the first true value is selected.
@@ -93,12 +93,12 @@ def adaptive_computation_time(halting_proba, eps=1e-2):
   # Calculate the halting distribution, eqn. (6).
   # Fill the first N steps with the halting probabilities.
   # Next values are zero.
-  p = tf.select(tf.less(timestep_index, N[:, None]),
+  p = tf.where(tf.less(timestep_index, N[:, None]),
                 halting_padded,
                 tf.zeros((batch, max_timesteps)))
   # Fill the (N+1)-st step with the remainder value.
-  p = tf.select(tf.equal(timestep_index, N[:, None]),
-                tf.tile(remainder[:, None], tf.pack([1, max_timesteps])),
+  p = tf.where(tf.equal(timestep_index, N[:, None]),
+                tf.tile(remainder[:, None], tf.stack([1, max_timesteps])),
                 p)
   halting_distribution = p
 
@@ -133,7 +133,7 @@ def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
                                                     max_timesteps, scope)
 
   (ponder_cost, num_timesteps, halting_distribution) = \
-      adaptive_computation_time(tf.concat(1, halting_probas[:-1]))
+      adaptive_computation_time(tf.concat(halting_probas[:-1], 1))
 
   if states[0].get_shape().is_fully_defined():
     sh = states[0].get_shape().as_list()
@@ -141,8 +141,8 @@ def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
     sh = tf.shape(states[0])
   batch = sh[0]
   h = tf.reshape(halting_distribution, [batch, 1, max_timesteps])
-  s = tf.reshape(tf.pack(states, axis=1), [batch, max_timesteps, -1])
-  outputs = tf.batch_matmul(h, s)
+  s = tf.reshape(tf.stack(states, axis=1), [batch, max_timesteps, -1])
+  outputs = tf.matmul(h, s)
   outputs = tf.reshape(outputs, sh)
 
   flops_per_iteration = [
@@ -235,7 +235,7 @@ def adaptive_computation_time_conv(inputs, timestep, max_timesteps,
       # Which objects are no longer calculated after this timestep?
       cur_elements_finished = (halting_cumsum >= 1 - eps)
       # Zero out halting_proba for the previously finished positions.
-      halting_proba = tf.select(cur_elements_finished,
+      halting_proba = tf.where(cur_elements_finished,
                                 tf.zeros(sh[:3]),
                                 halting_proba)
       # Find positions which have halted at the current timestep.
@@ -243,16 +243,16 @@ def adaptive_computation_time_conv(inputs, timestep, max_timesteps,
                                      cur_elements_finished)
       # For such positions, the halting distribution value is the remainder.
       # For others, it is the halting_proba.
-      cur_halting_distrib = tf.select(just_finished,
+      cur_halting_distrib = tf.where(just_finished,
                                       remainder,
                                       halting_proba)
 
       # Update ponder_cost. Add 1 to positions which are still computed,
       # remainder to the positions which have just halted and
       # 0 to the previously halted positions.
-      ponder_cost += tf.select(
+      ponder_cost += tf.where(
           cur_elements_finished,
-          tf.select(just_finished, remainder, tf.zeros(sh[:3])),
+          tf.where(just_finished, remainder, tf.zeros(sh[:3])),
           tf.ones(sh[:3]))
 
       # Add a timestep to the positions that were active during this timestep
@@ -272,7 +272,7 @@ def adaptive_computation_time_conv(inputs, timestep, max_timesteps,
 
       halting_distribs.append(cur_halting_distrib)
 
-  halting_distribution = tf.pack(halting_distribs, axis=3)
+  halting_distribution = tf.stack(halting_distribs, axis=3)
 
   if not state_shape_fully_defined:
     # Update static shape info. Faster RCNN code wants to know batch dimension
@@ -352,7 +352,7 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
     halting_cumsum += halting_proba
     cur_elements_finished = (halting_cumsum >= 1 - eps)
     # Zero out halting_proba for the previously finished objects.
-    halting_proba = tf.select(cur_elements_finished,
+    halting_proba = tf.where(cur_elements_finished,
                               tf.zeros([batch]),
                               halting_proba)
     # Find objects which have halted at the current timestep.
@@ -360,16 +360,16 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
                                    cur_elements_finished)
     # For such objects, the halting distribution value is the remainder.
     # For others, it is the halting_proba.
-    cur_halting_distrib = tf.select(just_finished,
+    cur_halting_distrib = tf.where(just_finished,
                                     remainder,
                                     halting_proba)
 
     # Update ponder_cost. Add 1 to objects which are still computed,
     # remainder to the objects which have just halted and
     # 0 to the previously halted objects.
-    ponder_cost += tf.select(
+    ponder_cost += tf.where(
         cur_elements_finished,
-        tf.select(just_finished, remainder, tf.zeros([batch])),
+        tf.where(just_finished, remainder, tf.zeros([batch])),
         tf.ones([batch]))
 
     # Add a timestep to the objects that were active during this timestep
@@ -430,6 +430,6 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
 
       halting_distribs.append(tf.reshape(cur_halting_distrib, [batch, 1]))
 
-  halting_distribution = tf.concat(1, halting_distribs)
+  halting_distribution = tf.concat(halting_distribs, 1)
 
   return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)

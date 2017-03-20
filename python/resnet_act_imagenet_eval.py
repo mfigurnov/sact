@@ -137,7 +137,7 @@ def main(_):
           metric_map)
 
       for name, value in names_to_values.iteritems():
-        summ = tf.scalar_summary(name, value, collections=[])
+        summ = tf.summary.scalar(name, value, collections=[])
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 

@@ -33,7 +33,7 @@ class FlopsometerTest(tf.test.TestCase):
         inputs, 8, [3, 3], stride=1, padding='SAME', output_mask=None)
     expected_flops = 2 * 16 * 16 * 3 * 3 * 8 * 4
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       flops_out = sess.run(flops)
       self.assertAllEqual(flops_out, [expected_flops, expected_flops])
 
@@ -44,7 +44,7 @@ class FlopsometerTest(tf.test.TestCase):
         inputs_tf, 8, [3, 3], stride=1, padding='SAME', output_mask=None)
     expected_flops = 2 * 16 * 16 * 3 * 3 * 8 * 4
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       flops_out = sess.run(flops, feed_dict={inputs_tf: inputs})
       self.assertAllEqual(flops_out, [expected_flops, expected_flops])
 
@@ -55,7 +55,7 @@ class FlopsometerTest(tf.test.TestCase):
     output_positions = 8 * 8
     expected_flops = 2 * output_positions * 3 * 3 * 8 * 4
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       flops_out = sess.run(flops)
       self.assertAllEqual(flops_out, [expected_flops, expected_flops])
 
@@ -74,7 +74,7 @@ class FlopsometerTest(tf.test.TestCase):
     ]
 
     with self.test_session() as sess:
-      sess.run(tf.initialize_all_variables())
+      sess.run(tf.global_variables_initializer())
       flops_out = sess.run(flops)
       self.assertAllEqual(flops_out, expected_flops)
 

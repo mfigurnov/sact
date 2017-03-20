@@ -97,7 +97,7 @@ I tensorflow/core/kernels/logging_ops.cc:79] block_1/flops_std[12406060]
 I tensorflow/core/kernels/logging_ops.cc:79] block_2/flops_std[1557621.2]
 I tensorflow/core/kernels/logging_ops.cc:79] eval/Mean Loss[0.39572093]
 I tensorflow/core/kernels/logging_ops.cc:79] eval/Accuracy[0.9386]
-I tensorflow/core/kernels/logging_ops.cc:79] block_2/num_timesteps_executed[18]
+I tensorflow/core/kernels/logging_ops.cc:79] block_2/num_units_executed[18]
 I tensorflow/core/kernels/logging_ops.cc:79] block_2/ponder_cost_std[0.25528291]
 ...
 ```

@@ -179,19 +179,19 @@ class ResNetConvActImagenetModelTest(tf.test.TestCase):
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_timesteps = resnet_act_utils.sact_image_heatmap(
+        vis_units = resnet_act_utils.sact_image_heatmap(
             end_points,
-            'num_timesteps',
+            'num_units',
             num_images=num_images,
             alpha=0.75,
             border=border)
 
         sess.run(tf.global_variables_initializer())
-        vis_ponder_out, vis_timesteps_out = sess.run(
-            [vis_ponder, vis_timesteps])
+        vis_ponder_out, vis_units_out = sess.run(
+            [vis_ponder, vis_units])
         self.assertEqual(vis_ponder_out.shape,
                          (num_images, height, width * 2 + border, 3))
-        self.assertEqual(vis_timesteps_out.shape,
+        self.assertEqual(vis_units_out.shape,
                          (num_images, height, width * 2 + border, 3))
 
 

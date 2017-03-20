@@ -32,33 +32,32 @@ def adaptive_computation_time(halting_proba, eps=1e-2):
   https://www.evernote.com/shard/s189/sh/fd165646-b630-48b7-844c-86ad2f07fcda/c9ab960af967ef847097f21d94b0bff7
 
   This module makes several assumptions:
-  1) The input stays the same for all the timesteps.
-  2) The number of possible timesteps for the input
-    is limited by `max_timesteps`.
-  3) We run all the timesteps for each object during training and inference.
-    The unused timesteps are simply "masked".
+  1) The maximum number of units is `max_units`.
+  2) We run all the units for each object during training and inference.
+    The unused units are simply "masked".
 
   Args:
     halting_proba: A 2-D `Tensor` of type `float32`. Probabilities
-      of halting the computation at a given timestep for the object.
-      Shape is `[batch, max_timesteps - 1]`.
+      of halting the computation at a given unit for the object.
+      Shape is `[batch, max_units - 1]`.
       The values need to be in the range [0, 1].
     eps: A `float` in the range [0, 1]. Small number to ensure that
-      the computation can halt after the first timestep.
+      the computation can halt after the first unit.
 
   Returns:
     ponder_cost: An 1-D `Tensor` of type `float32`.
-      A differentiable upper bound on the number of timesteps.
-    num_timesteps: An 1-D `Tensor` of type `int32`.
-      Actual number of timesteps that took place. num_timesteps < ponder_cost.
+      A differentiable upper bound on the number of units.
+    num_units: An 1-D `Tensor` of type `int32`.
+      Actual number of units that were actually executed.
+      num_units < ponder_cost.
     halting_distribution: A 2-D `Tensor` of type `float32`.
-      Shape is `[batch, max_timesteps]`. Halting probability distribution.
+      Shape is `[batch, max_units]`. Halting probability distribution.
       halting_distribution[i, j] is probability of computation for i-th object
-      to halt at j-th timestep. Sum of every row should be close to one.
+      to halt at j-th unit. Sum of every row should be close to one.
   """
   sh = halting_proba.get_shape().as_list()
   batch = sh[0]
-  max_timesteps = sh[1] + 1
+  max_units = sh[1] + 1
 
   zero_col = tf.zeros((batch, 1))
 
@@ -67,60 +66,60 @@ def adaptive_computation_time(halting_proba, eps=1e-2):
   halting_cumsum = tf.cumsum(halting_proba, axis=1)
   halting_cumsum_padded = tf.concat([zero_col, halting_cumsum], 1)
 
-  # Does computation halt at this timestep?
+  # Does computation halt at this unit?
   halt_flag = (halting_cumsum >= 1 - eps)
-  # Always halt at the final timestep.
+  # Always halt at the final unit.
   halt_flag_final = tf.concat([halt_flag, tf.fill([batch, 1], True)], 1)
 
   # Halting iteration (zero-based), eqn. (7).
   # Add a decaying value that ensures that the first true value is selected.
   # The decay value is always less than one.
-  decay = 1. / (2. + tf.to_float(tf.range(max_timesteps)))
+  decay = 1. / (2. + tf.to_float(tf.range(max_units)))
   halt_flag_final_with_decay = tf.to_float(halt_flag_final) + decay[None, :]
   N = tf.to_int32(tf.argmax(halt_flag_final_with_decay, dimension=1))
 
   N = tf.stop_gradient(N)
 
   # Fancy indexing to obtain the value of the remainder. Eqn. (8).
-  N_indices = tf.range(batch) * max_timesteps + N
+  N_indices = tf.range(batch) * max_units + N
   remainder = 1 - tf.gather(tf.reshape(halting_cumsum_padded, [-1]), N_indices)
 
-  # Switch to one-based indexing here for num_timesteps.
-  num_timesteps = N + 1
-  ponder_cost = tf.to_float(num_timesteps) + remainder
+  # Switch to one-based indexing here for num_units.
+  num_units = N + 1
+  ponder_cost = tf.to_float(num_units) + remainder
 
-  timestep_index = tf.range(max_timesteps)[None, :]
+  unit_index = tf.range(max_units)[None, :]
   # Calculate the halting distribution, eqn. (6).
   # Fill the first N steps with the halting probabilities.
   # Next values are zero.
-  p = tf.where(tf.less(timestep_index, N[:, None]),
+  p = tf.where(tf.less(unit_index, N[:, None]),
                 halting_padded,
-                tf.zeros((batch, max_timesteps)))
+                tf.zeros((batch, max_units)))
   # Fill the (N+1)-st step with the remainder value.
-  p = tf.where(tf.equal(timestep_index, N[:, None]),
-                tf.tile(remainder[:, None], tf.stack([1, max_timesteps])),
+  p = tf.where(tf.equal(unit_index, N[:, None]),
+                tf.tile(remainder[:, None], tf.stack([1, max_units])),
                 p)
   halting_distribution = p
 
-  return (ponder_cost, num_timesteps, halting_distribution)
+  return (ponder_cost, num_units, halting_distribution)
 
 
-def run_timesteps(inputs, timestep, max_timesteps, scope, reuse=False):
-  """Helper function for running timesteps of the network."""
+def run_units(inputs, unit, max_units, scope, reuse=False):
+  """Helper function for running units of the network."""
   states = []
   halting_probas = []
   all_flops = []
   with tf.variable_scope(scope, reuse=reuse):
     state = inputs
-    for timestep_idx in range(max_timesteps):
-      state, halting_proba, flops = timestep(state, timestep_idx)
+    for unit_idx in range(max_units):
+      state, halting_proba, flops = unit(state, unit_idx)
       states.append(state)
       halting_probas.append(halting_proba)
       all_flops.append(flops)
   return states, halting_probas, all_flops
 
 
-def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
+def adaptive_computation_time_wrapper(inputs, unit, max_units,
                                       eps=1e-2, scope='act'):
   """A wrapper of `adaptive_computation_time`.
 
@@ -129,10 +128,10 @@ def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
   `adaptive_computation_early_stopping` but does not use tf.cond and therefore
   works with parameter servers and the GPU.
   """
-  states, halting_probas, all_flops = run_timesteps(inputs, timestep,
-                                                    max_timesteps, scope)
+  states, halting_probas, all_flops = run_units(inputs, unit,
+                                                    max_units, scope)
 
-  (ponder_cost, num_timesteps, halting_distribution) = \
+  (ponder_cost, num_units, halting_distribution) = \
       adaptive_computation_time(tf.concat(halting_probas[:-1], 1))
 
   if states[0].get_shape().is_fully_defined():
@@ -140,67 +139,67 @@ def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
   else:
     sh = tf.shape(states[0])
   batch = sh[0]
-  h = tf.reshape(halting_distribution, [batch, 1, max_timesteps])
-  s = tf.reshape(tf.stack(states, axis=1), [batch, max_timesteps, -1])
+  h = tf.reshape(halting_distribution, [batch, 1, max_units])
+  s = tf.reshape(tf.stack(states, axis=1), [batch, max_units, -1])
   outputs = tf.matmul(h, s)
   outputs = tf.reshape(outputs, sh)
 
   flops_per_iteration = [
-      f * tf.to_int64(num_timesteps > i) for (i, f) in enumerate(all_flops)
+      f * tf.to_int64(num_units > i) for (i, f) in enumerate(all_flops)
   ]
   flops = tf.add_n(flops_per_iteration)
 
-  return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
+  return (ponder_cost, num_units, flops, halting_distribution, outputs)
 
 
-def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
+def adaptive_computation_early_stopping(inputs, unit, max_units,
                                         eps=1e-2, scope='act'):
   """Builds adaptive computation module with early stopping of computation.
 
-  `adaptive_computation_time` requires all timesteps to be always
+  `adaptive_computation_time` requires all units to be always
   computed. This function stops the computation as soon as all objects in the
   batch halt. However, if any object still needs calculation, the
-  timestep is executed for all objects.
+  unit is executed for all objects.
 
   See `adaptive_computation_time` description for more information.
 
   Args:
-    inputs: Input state at the first timestep. Can have different shape from
+    inputs: Input state at the first unit. Can have different shape from
       state and output. Should have fully defined shape.
-    timestep: A function which is called as follows:
-      `new_state, halting_proba, flops = timestep(old_state, timestep_idx)`
-      If `timestep_idx==1`, then `old_state` is `inputs`.
+    unit: A function which is called as follows:
+      `new_state, halting_proba, flops = unit(old_state, unit_idx)`
+      If `unit_idx==1`, then `old_state` is `inputs`.
       Flops should be a 1-D `Tensor` of length batch_size of type `int64`.
-      It can perform different computation depending on `timestep_idx`.
+      It can perform different computation depending on `unit_idx`.
       The function should not have any Python side-effects (due to `tf.cond`
       implementation).
 
-      The function is called two times for each `timestep_idx`.
+      The function is called two times for each `unit_idx`.
       1) Outside `tf.cond` to create the necessary variables with reuse=False.
       2) Inside `tf.cond` with reuse=True.
       For this reason, all variables should have static names.
       Good: `w = tf.get_variable('weights', [5, 3])`
       Bad: `w = tf.Variable(tf.zeros([5, 3]))  # The name is auto-generated`
-    max_timesteps: Maximum number of timesteps.
+    max_units: Maximum number of units.
     eps: A `float` in the range [0, 1]. Small number to ensure that
-      the computation can halt after the first timestep.
+      the computation can halt after the first unit.
     scope: variable scope or scope name in which the layers are created.
       Defaults to 'act'.
 
   Returns:
     ponder_cost: A 1-D `Tensor` of type `float32`.
-      A differentiable upper bound on the number of timesteps.
-    num_timesteps: A 1-D `Tensor` of type `int32`.
-      Actual number of timesteps that took place. num_timesteps < ponder_cost.
+      A differentiable upper bound on the number of units.
+    num_units: A 1-D `Tensor` of type `int32`.
+      Actual number of units that took place. num_units < ponder_cost.
     flops: A 1-D `Tensor` of type `int64`.
       Number of floating point operations that took place.
     halting_distribution: A 2-D `Tensor` of type `float`.
-      Shape is `[batch, max_timesteps]`. Halting probability distribution.
+      Shape is `[batch, max_units]`. Halting probability distribution.
       halting_distribution[i, j] is probability of computation for i-th object
-      to halt at j-th timestep. Sum of every row should be close to one.
+      to halt at j-th unit. Sum of every row should be close to one.
     outputs: A `Tensor` of shape [batch, ...]. Has same shape as states.
       Outputs of the ACT module, intermediate states weighted
-      by the halting distribution for the timesteps.
+      by the halting distribution for the units.
   """
   if inputs.get_shape().is_fully_defined():
     sh = inputs.get_shape().as_list()
@@ -209,13 +208,13 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
   batch = sh[0]
   inputs_rank = len(sh)
 
-  def _body(timestep_idx, state, halting_cumsum, elements_finished, remainder,
-            ponder_cost, num_timesteps, flops, outputs):
+  def _body(unit_idx, state, halting_cumsum, elements_finished, remainder,
+            ponder_cost, num_units, flops, outputs):
 
-    (new_state, halting_proba, cur_flops) = timestep(state, timestep_idx)
+    (new_state, halting_proba, cur_flops) = unit(state, unit_idx)
 
-    # We always halt at the last timestep.
-    if timestep_idx < max_timesteps - 1:
+    # We always halt at the last unit.
+    if unit_idx < max_units - 1:
       halting_proba = tf.reshape(halting_proba, [batch])
     else:
       halting_proba = tf.ones([batch])
@@ -226,7 +225,7 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
     halting_proba = tf.where(cur_elements_finished,
                               tf.zeros([batch]),
                               halting_proba)
-    # Find objects which have halted at the current timestep.
+    # Find objects which have halted at the current unit.
     just_finished = tf.logical_and(tf.logical_not(elements_finished),
                                    cur_elements_finished)
     # For such objects, the halting distribution value is the remainder.
@@ -243,10 +242,10 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
         tf.where(just_finished, remainder, tf.zeros([batch])),
         tf.ones([batch]))
 
-    # Add a timestep to the objects that were active during this timestep
-    # (not the ones that will be active the next timestep).
+    # Add a unit to the objects that were active during this unit
+    # (not the ones that will be active the next unit).
     evaluated_objects = tf.logical_not(elements_finished)
-    num_timesteps += tf.to_int32(evaluated_objects)
+    num_units += tf.to_int32(evaluated_objects)
 
     # Update the FLOPS counters for the same objects.
     flops += cur_flops * tf.to_int64(evaluated_objects)
@@ -258,16 +257,16 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
     remainder -= halting_proba
 
     return (new_state, halting_cumsum, cur_elements_finished, remainder,
-            ponder_cost, num_timesteps, flops, cur_halting_distrib, outputs)
+            ponder_cost, num_units, flops, cur_halting_distrib, outputs)
 
-  def _identity(timestep_idx, state, halting_cumsum, elements_finished,
-                remainder, ponder_cost, num_timesteps, flops, outputs):
+  def _identity(unit_idx, state, halting_cumsum, elements_finished,
+                remainder, ponder_cost, num_units, flops, outputs):
     return (state, halting_cumsum, elements_finished, remainder, ponder_cost,
-            num_timesteps, flops, tf.zeros([batch]), outputs)
+            num_units, flops, tf.zeros([batch]), outputs)
 
   # Create all the variables and losses outside of tf.cond.
   # Without this, regularization losses would not work correctly.
-  run_timesteps(inputs, timestep, max_timesteps, scope)
+  run_units(inputs, unit, max_units, scope)
 
   state = inputs
   halting_cumsum = tf.zeros([batch])
@@ -275,7 +274,7 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
   remainder = tf.ones([batch])
   # Initialize ponder_cost with one to fix an off-by-one error.
   ponder_cost = tf.ones([batch])
-  num_timesteps = tf.zeros([batch], dtype=tf.int32)
+  num_units = tf.zeros([batch], dtype=tf.int32)
   flops = tf.zeros([batch], dtype=tf.int64)
 
   # We don't know the shape of the outputs. Initialize it to scalar and
@@ -286,76 +285,76 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
   # Reuse the variables created above.
   with tf.variable_scope(scope, reuse=True):
     halting_distribs = []
-    for timestep_idx in range(max_timesteps):
+    for unit_idx in range(max_units):
       finished = tf.reduce_all(elements_finished)
-      args = (timestep_idx, state, halting_cumsum, elements_finished, remainder,
-              ponder_cost, num_timesteps, flops, outputs)
-      if timestep_idx == 0:
+      args = (unit_idx, state, halting_cumsum, elements_finished, remainder,
+              ponder_cost, num_units, flops, outputs)
+      if unit_idx == 0:
         return_values = _body(*args)
       else:
         return_values = tf.cond(finished,
                                 lambda: _identity(*args),
                                 lambda: _body(*args))
       (state, halting_cumsum, elements_finished, remainder, ponder_cost,
-       num_timesteps, flops, cur_halting_distrib, outputs) = return_values
+       num_units, flops, cur_halting_distrib, outputs) = return_values
 
       halting_distribs.append(tf.reshape(cur_halting_distrib, [batch, 1]))
 
   halting_distribution = tf.concat(halting_distribs, 1)
 
-  return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
+  return (ponder_cost, num_units, flops, halting_distribution, outputs)
 
 
-def spatially_adaptive_computation_time(inputs, timestep, max_timesteps,
+def spatially_adaptive_computation_time(inputs, unit, max_units,
                                         eps=1e-2, scope='act'):
   """Spatially adaptive computation time.
 
   Each spatial position in the states tensor has its own halting distribution.
   This allows to process different part of an image for a different number of
-  timesteps.
+  units.
 
   The code is similar to `adaptive_computation_early_stopping`. The differences
   are:
   1) The states are expected to be 4-D tensors (Batch-Height-Width-Channels).
     ACT is applied for first three dimensions.
-  2) timestep should have a `residual_mask` argument. It is a `float32` mask
+  2) unit should have a `residual_mask` argument. It is a `float32` mask
     with 1's corresponding to the positions which need to be updated.
     0's should be frozen. For ResNets this can be achieved by multiplying the
     residual branch responses by `residual_mask`.
   3) There is no tf.cond part so the computation is not actually saved.
 
   Args:
-    inputs: Input states at the first timestep, 4-D `Tensor` of type `float32`.
-    timestep: A function. See `adaptive_computation_early_stopping` for
+    inputs: Input states at the first unit, 4-D `Tensor` of type `float32`.
+    unit: A function. See `adaptive_computation_early_stopping` for
       detailed explanation.
-    max_timesteps: Maximum number of timesteps.
+    max_units: Maximum number of units.
     eps: A `float` in the range [0, 1]. Small number to ensure that
-      the computation can halt after the first timestep.
+      the computation can halt after the first unit.
     scope: variable scope or scope name in which the layers are created.
       Defaults to 'act'.
 
   Returns:
     ponder_cost: A 1-D `Tensor` of type `float32`.
-      A differentiable upper bound on the number of timesteps.
-    num_timesteps: A 1-D `Tensor` of type `int32`.
-      Actual number of timesteps that took place. num_timesteps < ponder_cost.
+      A differentiable upper bound on the number of units.
+    num_units: A 1-D `Tensor` of type `int32`.
+      Actual number of units that took place. num_units < ponder_cost.
     flops: A 1-D `Tensor` of type `int64`.
       Number of floating point operations that took place.
     halting_distribution: A 2-D `Tensor` of type `float32`.
-      Shape is `[batch, max_timesteps]`. Halting probability distribution.
+      Shape is `[batch, max_units]`. Halting probability distribution.
       halting_distribution[i, j] is probability of computation for i-th object
-      to halt at j-th timestep. Sum of every row should be close to one.
+      to halt at j-th unit. Sum of every row should be close to one.
     outputs: A 4-D `Tensor` of shape [batch, height, width, depth]. Outputs of
       the ACT module, intermediate states weighted by the halting distribution
-      for the timesteps.
+      for the units.
   """
   with tf.variable_scope(scope):
     halting_distribs = []
-    for timestep_idx in range(max_timesteps):
+    for unit_idx in range(max_units):
 
-      if not timestep_idx:
-        (state, halting_proba, flops) = timestep(
-            inputs, timestep_idx, residual_mask=None)
+      if not unit_idx:
+        (state, halting_proba, flops) = unit(
+            inputs, unit_idx, residual_mask=None)
 
         # Initialize the variables which depend on the state shape.
         state_shape_fully_defined = state.get_shape().is_fully_defined()
@@ -369,29 +368,29 @@ def spatially_adaptive_computation_time(inputs, timestep, max_timesteps,
         remainder = tf.ones(sh[:3])
         # Initialize ponder_cost with one to fix an off-by-one error.
         ponder_cost = tf.ones(sh[:3])
-        num_timesteps = tf.zeros(sh[:3], dtype=tf.int32)
+        num_units = tf.zeros(sh[:3], dtype=tf.int32)
       else:
         # Mask out the residual values for the not calculated outputs.
         residual_mask = tf.to_float(tf.logical_not(elements_finished))
         residual_mask = tf.expand_dims(residual_mask, 3)
-        (state, halting_proba, current_flops) = timestep(
-            state, timestep_idx, residual_mask=residual_mask)
+        (state, halting_proba, current_flops) = unit(
+            state, unit_idx, residual_mask=residual_mask)
         flops += current_flops
 
-      # We always halt at the last timestep.
-      if timestep_idx < max_timesteps - 1:
+      # We always halt at the last unit.
+      if unit_idx < max_units - 1:
         halting_proba = tf.reshape(halting_proba, sh[:3])
       else:
         halting_proba = tf.ones(sh[:3])
 
       halting_cumsum += halting_proba
-      # Which objects are no longer calculated after this timestep?
+      # Which objects are no longer calculated after this unit?
       cur_elements_finished = (halting_cumsum >= 1 - eps)
       # Zero out halting_proba for the previously finished positions.
       halting_proba = tf.where(cur_elements_finished,
                                 tf.zeros(sh[:3]),
                                 halting_proba)
-      # Find positions which have halted at the current timestep.
+      # Find positions which have halted at the current unit.
       just_finished = tf.logical_and(tf.logical_not(elements_finished),
                                      cur_elements_finished)
       # For such positions, the halting distribution value is the remainder.
@@ -408,13 +407,13 @@ def spatially_adaptive_computation_time(inputs, timestep, max_timesteps,
           tf.where(just_finished, remainder, tf.zeros(sh[:3])),
           tf.ones(sh[:3]))
 
-      # Add a timestep to the positions that were active during this timestep
-      # (not the ones that will be active the next timestep).
-      num_timesteps += tf.to_int32(tf.logical_not(elements_finished))
+      # Add a unit to the positions that were active during this unit
+      # (not the ones that will be active the next unit).
+      num_units += tf.to_int32(tf.logical_not(elements_finished))
 
       # Add new state to the outputs weighted by the halting distribution.
       update = state * tf.expand_dims(cur_halting_distrib, 3)
-      if timestep_idx:
+      if unit_idx:
         outputs += update
       else:
         outputs = update
@@ -432,4 +431,4 @@ def spatially_adaptive_computation_time(inputs, timestep, max_timesteps,
     # statically.
     outputs.set_shape(inputs.get_shape().as_list()[:1] + [None] * 3)
 
-  return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
+  return (ponder_cost, num_units, flops, halting_distribution, outputs)

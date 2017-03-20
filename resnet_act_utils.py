@@ -65,13 +65,13 @@ def act_metric_map(end_points, mean_metric):
     ponder_map = moments_metric_map(ponder_cost, name)
     metric_map.update(ponder_map)
 
-    name = '{}/num_timesteps'.format(block_scope)
-    num_timesteps = tf.to_float(end_points[name])
-    num_timesteps_map = moments_metric_map(num_timesteps, name)
-    metric_map.update(num_timesteps_map)
+    name = '{}/num_units'.format(block_scope)
+    num_units = tf.to_float(end_points[name])
+    num_units_map = moments_metric_map(num_units, name)
+    metric_map.update(num_units_map)
 
-    name = '{}/num_timesteps_executed'.format(block_scope)
-    metric_map[name] = tf.reduce_max(num_timesteps)
+    name = '{}/num_units_executed'.format(block_scope)
+    metric_map[name] = tf.reduce_max(num_units)
 
   if mean_metric:
     metric_map = {k: slim.metrics.streaming_mean(v)
@@ -126,7 +126,7 @@ def get_halting_proba_conv(outputs,
                            init_bias=-3.,
                            resolution=0,
                            kernel_size=1,
-                           use_global_proba=True,
+                           use_global_logit=True,
                            residual_mask=None):
   with tf.variable_scope('halting_proba'):
     flops = 0
@@ -136,8 +136,8 @@ def get_halting_proba_conv(outputs,
     feature_shape = outputs_shape
     if resolution:
       # Assume the feature maps are square, use the height dimension.
-      print('Output shape ', outputs_shape)
-      print('ACT map target resolution ', resolution)
+      # print('Output shape ', outputs_shape)
+      # print('ACT map target resolution ', resolution)
       assert outputs_shape[1] == outputs_shape[2]
       # Also assert that resolution divides sh[1]
       assert outputs_shape[1] % resolution == 0
@@ -148,7 +148,7 @@ def get_halting_proba_conv(outputs,
       assert feature_shape[1] == resolution
 
     local_feature = slim.batch_norm(x, scope='local_bn')
-    halting_proba, current_flops = flopsometer.conv2d(
+    halting_logit, current_flops = flopsometer.conv2d(
         local_feature,
         1,
         kernel_size,
@@ -159,11 +159,11 @@ def get_halting_proba_conv(outputs,
         scope='local_conv')
     flops += current_flops
 
-    # Add global halting probability.
-    if use_global_proba:
+    # Add global halting logit.
+    if use_global_logit:
       global_feature = tf.reduce_mean(x, [1, 2], keep_dims=True)
       global_feature = slim.batch_norm(global_feature, scope='global_bn')
-      halting_proba_global, current_flops = flopsometer.conv2d(
+      halting_logit_global, current_flops = flopsometer.conv2d(
           global_feature,
           1,
           1,
@@ -174,9 +174,9 @@ def get_halting_proba_conv(outputs,
       flops += current_flops
 
       # Addition with broadcasting over spatial dimensions.
-      halting_proba += halting_proba_global
+      halting_logit += halting_logit_global
 
-    halting_proba = tf.sigmoid(halting_proba)
+    halting_proba = tf.sigmoid(halting_logit)
 
     if resolution and stride > 1:
       halting_proba = tf.image.resize_nearest_neighbor(
@@ -226,7 +226,7 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
         else:
           act_func = act.adaptive_computation_time_wrapper
 
-      (ponder_cost, num_timesteps, flops, halting_distribution, net) = act_func(
+      (ponder_cost, num_units, flops, halting_distribution, net) = act_func(
           net,
           partial(
               layer_act, block, sact=sact),
@@ -234,7 +234,7 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
           scope=block.scope)
 
       end_points['{}/ponder_cost'.format(block.scope)] = ponder_cost
-      end_points['{}/num_timesteps'.format(block.scope)] = num_timesteps
+      end_points['{}/num_units'.format(block.scope)] = num_units
       end_points['{}/halting_distribution'.format(
           block.scope)] = halting_distribution
     else:
@@ -286,7 +286,7 @@ def sact_image_heatmap(end_points,
                            border=5,
                            normalize_images=True):
   """Overlays a heatmap of the ponder cost onto the input image."""
-  assert metric_name in ('ponder_cost', 'num_timesteps')
+  assert metric_name in ('ponder_cost', 'num_units')
 
   images = end_points['inputs']
   if num_images is not None:
@@ -338,10 +338,10 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
           alpha=alpha,
           border=border))
   tf.image_summary(
-      'heatmaps/num_timesteps',
+      'heatmaps/num_units',
       sact_image_heatmap(
           end_points,
-          'num_timesteps',
+          'num_units',
           num_images=num_images,
           alpha=alpha,
           border=border))
@@ -349,7 +349,7 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
 
 def sact_map(end_points, metric_name):
   """Generates a headmap of the ponder cost for visualization."""
-  assert metric_name in ('ponder_cost', 'num_timesteps')
+  assert metric_name in ('ponder_cost', 'num_units')
 
   inputs = end_points['inputs']
   if inputs.get_shape().is_fully_defined():
@@ -380,7 +380,7 @@ def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
   keys_to_tensors = {}
   for block_scope in end_points['block_scopes']:
     for k in ('{}/ponder_cost'.format(block_scope),
-              '{}/num_timesteps'.format(block_scope),
+              '{}/num_units'.format(block_scope),
               '{}/halting_distribution'.format(block_scope),
               '{}/flops'.format(block_scope)):
       keys_to_tensors[k] = end_points[k]
@@ -389,8 +389,7 @@ def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
 
   if sact:
     keys_to_tensors['ponder_cost_map'] = sact_map(end_points, 'ponder_cost')
-    keys_to_tensors['num_timesteps_map'] = sact_map(end_points,
-                                                        'num_timesteps')
+    keys_to_tensors['num_units_map'] = sact_map(end_points, 'num_units')
 
   keys_to_datasets = {}
   for key, tensor in keys_to_tensors.iteritems():

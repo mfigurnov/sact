@@ -105,7 +105,7 @@ def resnet_v2(inputs,
               num_classes=None,
               global_pool=True,
               use_act=False,
-              conv_act=False,
+              sact=False,
               scope=None,
               reuse=None,
               end_points=None):
@@ -128,7 +128,7 @@ def resnet_v2(inputs,
         blocks,
         use_act=use_act,
         act_early_stopping=False,
-        conv_act=conv_act,
+        sact=sact,
         end_points=end_points)
 
     if global_pool or num_classes is not None:
@@ -155,8 +155,8 @@ def resnet_v2(inputs,
 
 def resnet_arg_scope(is_training=True,
                      weight_decay=0.0001,
-                     conv_act_kernel_size=1,
-                     conv_act_resolution=0):
+                     sact_kernel_size=1,
+                     sact_resolution=0):
   with slim.arg_scope(
       resnet_utils.resnet_arg_scope(
           is_training, weight_decay=weight_decay)):
@@ -165,8 +165,8 @@ def resnet_arg_scope(is_training=True,
     with slim.arg_scope([slim.batch_norm], updates_collections=None):
       with slim.arg_scope(
           [resnet_act_utils.get_halting_proba_conv],
-          kernel_size=conv_act_kernel_size,
-          resolution=conv_act_resolution) as arg_sc:
+          kernel_size=sact_kernel_size,
+          resolution=sact_resolution) as arg_sc:
         return arg_sc
 
 
@@ -174,7 +174,7 @@ def get_network(images,
                 num_layers,
                 num_classes,
                 use_act,
-                conv_act,
+                sact,
                 global_pool=True,
                 scope=None,
                 reuse=None,
@@ -211,7 +211,7 @@ def get_network(images,
       num_classes,
       global_pool=global_pool,
       use_act=use_act,
-      conv_act=conv_act,
+      sact=sact,
       scope=scope,
       reuse=reuse,
       end_points=end_points)

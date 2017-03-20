@@ -65,13 +65,13 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
 
 tf.app.flags.DEFINE_bool(
-    'conv_act', False,
+    'sact', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('sact_kernel_size', 3,
                         'Kernel size for spatially ACT.')
 
-tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('sact_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
@@ -95,15 +95,15 @@ def main(_):
     with slim.arg_scope(
         resnet_act_imagenet_model.resnet_arg_scope(
             is_training=False,
-            conv_act_kernel_size=FLAGS.conv_act_kernel_size,
-            conv_act_resolution=FLAGS.conv_act_resolution)):
+            sact_kernel_size=FLAGS.sact_kernel_size,
+            sact_resolution=FLAGS.sact_resolution)):
       num_layers = resnet_act_utils.parse_num_layers(FLAGS.num_layers)
       logits, end_points = resnet_act_imagenet_model.get_network(
           images,
           num_layers,
           num_classes,
           use_act=FLAGS.use_act,
-          conv_act=FLAGS.conv_act)
+          sact=FLAGS.sact)
 
       # For eval, explicitly add moving_mean and moving_variance variables to
       # the MOVING_AVERAGE_VARIABLES collection.
@@ -141,7 +141,7 @@ def main(_):
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
-      if FLAGS.use_act and FLAGS.conv_act:
+      if FLAGS.use_act and FLAGS.sact:
         resnet_act_utils.add_heatmaps_image_summary(end_points, border=10)
 
       # This ensures that we make a single pass over all of the data.

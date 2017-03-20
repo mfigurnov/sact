@@ -217,118 +217,6 @@ class ActWrapperTest(tf.test.TestCase):
       self.assertEqual(decay_cost_out, 5.0)
 
 
-class ActConvTest(tf.test.TestCase):
-
-  def testSimple(self):
-    # Batch x Height x Width x Channels
-    sh = [1, 1, 2, 1]
-    timestep_outputs = [
-        np.array([1.0, 2.0]).reshape(sh),
-        np.array([3.0, 4.0]).reshape(sh),
-        np.array([5.0, 6.0]).reshape(sh),
-    ]
-    halting_probas = [
-        np.array([0.9, 0.1]).reshape(sh),
-        np.array([0.5, 0.1]).reshape(sh),
-        np.array([0.8, 0.1]).reshape(sh),  # unused
-    ]
-    flops = [2, 2, 2]
-    max_timesteps = 3
-    residual_masks = []
-
-    def timestep(_, timestep_idx, residual_mask):
-      residual_masks.append(residual_mask)
-      return (tf.constant(
-          timestep_outputs[timestep_idx], dtype=tf.float32), tf.constant(
-              halting_probas[timestep_idx], dtype=tf.float32), tf.constant(
-                  flops[timestep_idx], shape=[1], dtype=tf.int64))
-
-    inputs = tf.random_normal(shape=sh)
-    (cost, num_timesteps, flops, distrib, outputs
-    ) = act.adaptive_computation_time_conv(inputs, timestep, max_timesteps)
-    with self.test_session() as sess:
-      (cost_out, num_timesteps_out, flops_out, distrib_out, outputs_out,
-       residual_masks_out) = sess.run(
-           (cost, num_timesteps, flops, distrib, outputs, residual_masks[1:]))
-    # Batch x Height x Width x Channels
-    sh = [1, 1, 2]
-    self.assertAllClose(cost_out, np.array([2.1, 3.8]).reshape(sh))
-    self.assertAllEqual(num_timesteps_out, np.array([2, 3]).reshape(sh))
-    self.assertAllEqual(flops_out, [6])
-    distrib_expected = np.array([[0.9, 0.1, 0.0], [0.1, 0.1, 0.8]])
-    self.assertAllClose(distrib_out, distrib_expected.reshape(sh + [3]))
-    outputs_expected = np.array([1.2, 5.4])
-    self.assertAllClose(outputs_out, outputs_expected.reshape(sh + [1]))
-    # Residual mask for the second timestep
-    self.assertAllClose(residual_masks_out[0],
-                        np.array([1., 1.]).reshape(sh + [1]))
-    # Residual mask for the third timestep
-    self.assertAllClose(residual_masks_out[1],
-                        np.array([0., 1.]).reshape(sh + [1]))
-
-  def testInputs(self):
-    max_timesteps = 5
-    inputs = tf.random_normal(shape=[2, 5, 3, 3])
-    # Generate random probabilities for first four timesteps that sum up to one.
-    # Fill in last timestep with zeros.
-    probas = tf.random_normal(shape=[max_timesteps - 1, 2, 5, 3])
-    probas = tf.reshape(probas, [max_timesteps - 1, 2 * 5 * 3])
-    probas = tf.nn.softmax(probas)
-    probas = tf.reshape(probas, [max_timesteps - 1, 2, 5, 3])
-    probas = tf.concat([probas, tf.zeros([1, 2, 5, 3])], 0)
-
-    def timestep(x, timestep_idx, residual_mask):
-      return (x, tf.reshape(probas[timestep_idx, :, :, :], [2, 5, 3, 1]),
-              tf.zeros(
-                  [2], dtype=tf.int64))
-
-    (_, _, _, _, outputs) = act.adaptive_computation_time_conv(inputs, timestep,
-                                                               max_timesteps)
-    with self.test_session() as sess:
-      (inputs_out, outputs_out) = sess.run((inputs, outputs))
-      self.assertAllClose(inputs_out, outputs_out)
-
-  def testResidualMask(self):
-    # Batch x Height x Width x Channels
-    sh = [1, 1, 2, 1]
-    halting_probas = [
-        np.array([0.9, 0.1]).reshape(sh),
-        np.array([0.5, 0.1]).reshape(sh),
-        np.array([0.8, 0.1]).reshape(sh),  # unused
-    ]
-    max_timesteps = 3
-
-    timestep_outputs = []
-
-    def timestep(x, timestep_idx, residual_mask):
-      residual = tf.ones(sh)
-      if residual_mask is not None:
-        residual *= residual_mask
-      outputs = x + residual
-      timestep_outputs.append(outputs)
-      return (outputs, tf.constant(
-          halting_probas[timestep_idx], dtype=tf.float32), tf.zeros(
-              [2], dtype=tf.int64))
-
-    inputs = tf.zeros(sh)
-    (_, _, _, _, outputs) = act.adaptive_computation_time_conv(inputs, timestep,
-                                                               max_timesteps)
-    with self.test_session() as sess:
-      timestep_outputs_out, final_outputs_out = sess.run(
-          (timestep_outputs, outputs))
-
-    # First position runs for two iterations,
-    # second position for three iterations
-    self.assertAllClose(timestep_outputs_out[0],
-                        np.array([1.0, 1.0]).reshape(sh))
-    self.assertAllClose(timestep_outputs_out[1],
-                        np.array([2.0, 2.0]).reshape(sh))
-    self.assertAllClose(timestep_outputs_out[2],
-                        np.array([2.0, 3.0]).reshape(sh))
-
-    self.assertAllClose(final_outputs_out, np.array([1.1, 2.7]).reshape(sh))
-
-
 class ActEarlyStoppingTest(tf.test.TestCase):
 
   def _runAct(self, timestep_outputs, halting_probas):
@@ -445,6 +333,118 @@ class ActEarlyStoppingTest(tf.test.TestCase):
       sess.run(tf.global_variables_initializer())
       (outputs_out, decay_cost_out) = sess.run((outputs, decay_cost))
       self.assertEqual(decay_cost_out, 5.0)
+
+
+class SactTest(tf.test.TestCase):
+
+  def testSimple(self):
+    # Batch x Height x Width x Channels
+    sh = [1, 1, 2, 1]
+    timestep_outputs = [
+        np.array([1.0, 2.0]).reshape(sh),
+        np.array([3.0, 4.0]).reshape(sh),
+        np.array([5.0, 6.0]).reshape(sh),
+    ]
+    halting_probas = [
+        np.array([0.9, 0.1]).reshape(sh),
+        np.array([0.5, 0.1]).reshape(sh),
+        np.array([0.8, 0.1]).reshape(sh),  # unused
+    ]
+    flops = [2, 2, 2]
+    max_timesteps = 3
+    residual_masks = []
+
+    def timestep(_, timestep_idx, residual_mask):
+      residual_masks.append(residual_mask)
+      return (tf.constant(
+          timestep_outputs[timestep_idx], dtype=tf.float32), tf.constant(
+              halting_probas[timestep_idx], dtype=tf.float32), tf.constant(
+                  flops[timestep_idx], shape=[1], dtype=tf.int64))
+
+    inputs = tf.random_normal(shape=sh)
+    (cost, num_timesteps, flops, distrib, outputs
+    ) = act.spatially_adaptive_computation_time(inputs, timestep, max_timesteps)
+    with self.test_session() as sess:
+      (cost_out, num_timesteps_out, flops_out, distrib_out, outputs_out,
+       residual_masks_out) = sess.run(
+           (cost, num_timesteps, flops, distrib, outputs, residual_masks[1:]))
+    # Batch x Height x Width x Channels
+    sh = [1, 1, 2]
+    self.assertAllClose(cost_out, np.array([2.1, 3.8]).reshape(sh))
+    self.assertAllEqual(num_timesteps_out, np.array([2, 3]).reshape(sh))
+    self.assertAllEqual(flops_out, [6])
+    distrib_expected = np.array([[0.9, 0.1, 0.0], [0.1, 0.1, 0.8]])
+    self.assertAllClose(distrib_out, distrib_expected.reshape(sh + [3]))
+    outputs_expected = np.array([1.2, 5.4])
+    self.assertAllClose(outputs_out, outputs_expected.reshape(sh + [1]))
+    # Residual mask for the second timestep
+    self.assertAllClose(residual_masks_out[0],
+                        np.array([1., 1.]).reshape(sh + [1]))
+    # Residual mask for the third timestep
+    self.assertAllClose(residual_masks_out[1],
+                        np.array([0., 1.]).reshape(sh + [1]))
+
+  def testInputs(self):
+    max_timesteps = 5
+    inputs = tf.random_normal(shape=[2, 5, 3, 3])
+    # Generate random probabilities for first four timesteps that sum up to one.
+    # Fill in last timestep with zeros.
+    probas = tf.random_normal(shape=[max_timesteps - 1, 2, 5, 3])
+    probas = tf.reshape(probas, [max_timesteps - 1, 2 * 5 * 3])
+    probas = tf.nn.softmax(probas)
+    probas = tf.reshape(probas, [max_timesteps - 1, 2, 5, 3])
+    probas = tf.concat([probas, tf.zeros([1, 2, 5, 3])], 0)
+
+    def timestep(x, timestep_idx, residual_mask):
+      return (x, tf.reshape(probas[timestep_idx, :, :, :], [2, 5, 3, 1]),
+              tf.zeros(
+                  [2], dtype=tf.int64))
+
+    (_, _, _, _, outputs) = act.spatially_adaptive_computation_time(
+      inputs, timestep, max_timesteps)
+    with self.test_session() as sess:
+      (inputs_out, outputs_out) = sess.run((inputs, outputs))
+      self.assertAllClose(inputs_out, outputs_out)
+
+  def testResidualMask(self):
+    # Batch x Height x Width x Channels
+    sh = [1, 1, 2, 1]
+    halting_probas = [
+        np.array([0.9, 0.1]).reshape(sh),
+        np.array([0.5, 0.1]).reshape(sh),
+        np.array([0.8, 0.1]).reshape(sh),  # unused
+    ]
+    max_timesteps = 3
+
+    timestep_outputs = []
+
+    def timestep(x, timestep_idx, residual_mask):
+      residual = tf.ones(sh)
+      if residual_mask is not None:
+        residual *= residual_mask
+      outputs = x + residual
+      timestep_outputs.append(outputs)
+      return (outputs, tf.constant(
+          halting_probas[timestep_idx], dtype=tf.float32), tf.zeros(
+              [2], dtype=tf.int64))
+
+    inputs = tf.zeros(sh)
+    (_, _, _, _, outputs) = act.spatially_adaptive_computation_time(
+      inputs, timestep, max_timesteps)
+    with self.test_session() as sess:
+      timestep_outputs_out, final_outputs_out = sess.run(
+          (timestep_outputs, outputs))
+
+    # First position runs for two iterations,
+    # second position for three iterations
+    self.assertAllClose(timestep_outputs_out[0],
+                        np.array([1.0, 1.0]).reshape(sh))
+    self.assertAllClose(timestep_outputs_out[1],
+                        np.array([2.0, 2.0]).reshape(sh))
+    self.assertAllClose(timestep_outputs_out[2],
+                        np.array([2.0, 3.0]).reshape(sh))
+
+    self.assertAllClose(final_outputs_out, np.array([1.1, 2.7]).reshape(sh))
 
 
 if __name__ == '__main__':

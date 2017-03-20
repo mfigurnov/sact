@@ -153,135 +153,6 @@ def adaptive_computation_time_wrapper(inputs, timestep, max_timesteps,
   return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
 
 
-def adaptive_computation_time_conv(inputs, timestep, max_timesteps,
-                                   eps=1e-2, scope='act'):
-  """Spatially adaptive computation time.
-
-  Each spatial position in the states tensor has its own halting distribution.
-  This allows to process different part of an image for a different number of
-  timesteps.
-
-  The code is similar to `adaptive_computation_early_stopping`. The differences
-  are:
-  1) The states are expected to be 4-D tensors (Batch-Height-Width-Channels).
-    ACT is applied for first three dimensions.
-  2) timestep should have a `residual_mask` argument. It is a `float32` mask
-    with 1's corresponding to the positions which need to be updated.
-    0's should be frozen. For ResNets this can be achieved by multiplying the
-    residual branch responses by `residual_mask`.
-  3) There is no tf.cond part so the computation is not actually saved.
-
-  Args:
-    inputs: Input states at the first timestep, 4-D `Tensor` of type `float32`.
-    timestep: A function. See `adaptive_computation_early_stopping` for
-      detailed explanation.
-    max_timesteps: Maximum number of timesteps.
-    eps: A `float` in the range [0, 1]. Small number to ensure that
-      the computation can halt after the first timestep.
-    scope: variable scope or scope name in which the layers are created.
-      Defaults to 'act'.
-
-  Returns:
-    ponder_cost: A 1-D `Tensor` of type `float32`.
-      A differentiable upper bound on the number of timesteps.
-    num_timesteps: A 1-D `Tensor` of type `int32`.
-      Actual number of timesteps that took place. num_timesteps < ponder_cost.
-    flops: A 1-D `Tensor` of type `int64`.
-      Number of floating point operations that took place.
-    halting_distribution: A 2-D `Tensor` of type `float32`.
-      Shape is `[batch, max_timesteps]`. Halting probability distribution.
-      halting_distribution[i, j] is probability of computation for i-th object
-      to halt at j-th timestep. Sum of every row should be close to one.
-    outputs: A 4-D `Tensor` of shape [batch, height, width, depth]. Outputs of
-      the ACT module, intermediate states weighted by the halting distribution
-      for the timesteps.
-  """
-  with tf.variable_scope(scope):
-    halting_distribs = []
-    for timestep_idx in range(max_timesteps):
-
-      if not timestep_idx:
-        (state, halting_proba, flops) = timestep(
-            inputs, timestep_idx, residual_mask=None)
-
-        # Initialize the variables which depend on the state shape.
-        state_shape_fully_defined = state.get_shape().is_fully_defined()
-        if state_shape_fully_defined:
-          sh = state.get_shape().as_list()
-          assert len(sh) == 4
-        else:
-          sh = tf.shape(state)
-        halting_cumsum = tf.zeros(sh[:3])
-        elements_finished = tf.fill(sh[:3], False)
-        remainder = tf.ones(sh[:3])
-        # Initialize ponder_cost with one to fix an off-by-one error.
-        ponder_cost = tf.ones(sh[:3])
-        num_timesteps = tf.zeros(sh[:3], dtype=tf.int32)
-      else:
-        # Mask out the residual values for the not calculated outputs.
-        residual_mask = tf.to_float(tf.logical_not(elements_finished))
-        residual_mask = tf.expand_dims(residual_mask, 3)
-        (state, halting_proba, current_flops) = timestep(
-            state, timestep_idx, residual_mask=residual_mask)
-        flops += current_flops
-
-      # We always halt at the last timestep.
-      if timestep_idx < max_timesteps - 1:
-        halting_proba = tf.reshape(halting_proba, sh[:3])
-      else:
-        halting_proba = tf.ones(sh[:3])
-
-      halting_cumsum += halting_proba
-      # Which objects are no longer calculated after this timestep?
-      cur_elements_finished = (halting_cumsum >= 1 - eps)
-      # Zero out halting_proba for the previously finished positions.
-      halting_proba = tf.where(cur_elements_finished,
-                                tf.zeros(sh[:3]),
-                                halting_proba)
-      # Find positions which have halted at the current timestep.
-      just_finished = tf.logical_and(tf.logical_not(elements_finished),
-                                     cur_elements_finished)
-      # For such positions, the halting distribution value is the remainder.
-      # For others, it is the halting_proba.
-      cur_halting_distrib = tf.where(just_finished,
-                                      remainder,
-                                      halting_proba)
-
-      # Update ponder_cost. Add 1 to positions which are still computed,
-      # remainder to the positions which have just halted and
-      # 0 to the previously halted positions.
-      ponder_cost += tf.where(
-          cur_elements_finished,
-          tf.where(just_finished, remainder, tf.zeros(sh[:3])),
-          tf.ones(sh[:3]))
-
-      # Add a timestep to the positions that were active during this timestep
-      # (not the ones that will be active the next timestep).
-      num_timesteps += tf.to_int32(tf.logical_not(elements_finished))
-
-      # Add new state to the outputs weighted by the halting distribution.
-      update = state * tf.expand_dims(cur_halting_distrib, 3)
-      if timestep_idx:
-        outputs += update
-      else:
-        outputs = update
-
-      remainder -= halting_proba
-
-      elements_finished = cur_elements_finished
-
-      halting_distribs.append(cur_halting_distrib)
-
-  halting_distribution = tf.stack(halting_distribs, axis=3)
-
-  if not state_shape_fully_defined:
-    # Update static shape info. Faster RCNN code wants to know batch dimension
-    # statically.
-    outputs.set_shape(inputs.get_shape().as_list()[:1] + [None] * 3)
-
-  return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
-
-
 def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
                                         eps=1e-2, scope='act'):
   """Builds adaptive computation module with early stopping of computation.
@@ -431,5 +302,134 @@ def adaptive_computation_early_stopping(inputs, timestep, max_timesteps,
       halting_distribs.append(tf.reshape(cur_halting_distrib, [batch, 1]))
 
   halting_distribution = tf.concat(halting_distribs, 1)
+
+  return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)
+
+
+def spatially_adaptive_computation_time(inputs, timestep, max_timesteps,
+                                        eps=1e-2, scope='act'):
+  """Spatially adaptive computation time.
+
+  Each spatial position in the states tensor has its own halting distribution.
+  This allows to process different part of an image for a different number of
+  timesteps.
+
+  The code is similar to `adaptive_computation_early_stopping`. The differences
+  are:
+  1) The states are expected to be 4-D tensors (Batch-Height-Width-Channels).
+    ACT is applied for first three dimensions.
+  2) timestep should have a `residual_mask` argument. It is a `float32` mask
+    with 1's corresponding to the positions which need to be updated.
+    0's should be frozen. For ResNets this can be achieved by multiplying the
+    residual branch responses by `residual_mask`.
+  3) There is no tf.cond part so the computation is not actually saved.
+
+  Args:
+    inputs: Input states at the first timestep, 4-D `Tensor` of type `float32`.
+    timestep: A function. See `adaptive_computation_early_stopping` for
+      detailed explanation.
+    max_timesteps: Maximum number of timesteps.
+    eps: A `float` in the range [0, 1]. Small number to ensure that
+      the computation can halt after the first timestep.
+    scope: variable scope or scope name in which the layers are created.
+      Defaults to 'act'.
+
+  Returns:
+    ponder_cost: A 1-D `Tensor` of type `float32`.
+      A differentiable upper bound on the number of timesteps.
+    num_timesteps: A 1-D `Tensor` of type `int32`.
+      Actual number of timesteps that took place. num_timesteps < ponder_cost.
+    flops: A 1-D `Tensor` of type `int64`.
+      Number of floating point operations that took place.
+    halting_distribution: A 2-D `Tensor` of type `float32`.
+      Shape is `[batch, max_timesteps]`. Halting probability distribution.
+      halting_distribution[i, j] is probability of computation for i-th object
+      to halt at j-th timestep. Sum of every row should be close to one.
+    outputs: A 4-D `Tensor` of shape [batch, height, width, depth]. Outputs of
+      the ACT module, intermediate states weighted by the halting distribution
+      for the timesteps.
+  """
+  with tf.variable_scope(scope):
+    halting_distribs = []
+    for timestep_idx in range(max_timesteps):
+
+      if not timestep_idx:
+        (state, halting_proba, flops) = timestep(
+            inputs, timestep_idx, residual_mask=None)
+
+        # Initialize the variables which depend on the state shape.
+        state_shape_fully_defined = state.get_shape().is_fully_defined()
+        if state_shape_fully_defined:
+          sh = state.get_shape().as_list()
+          assert len(sh) == 4
+        else:
+          sh = tf.shape(state)
+        halting_cumsum = tf.zeros(sh[:3])
+        elements_finished = tf.fill(sh[:3], False)
+        remainder = tf.ones(sh[:3])
+        # Initialize ponder_cost with one to fix an off-by-one error.
+        ponder_cost = tf.ones(sh[:3])
+        num_timesteps = tf.zeros(sh[:3], dtype=tf.int32)
+      else:
+        # Mask out the residual values for the not calculated outputs.
+        residual_mask = tf.to_float(tf.logical_not(elements_finished))
+        residual_mask = tf.expand_dims(residual_mask, 3)
+        (state, halting_proba, current_flops) = timestep(
+            state, timestep_idx, residual_mask=residual_mask)
+        flops += current_flops
+
+      # We always halt at the last timestep.
+      if timestep_idx < max_timesteps - 1:
+        halting_proba = tf.reshape(halting_proba, sh[:3])
+      else:
+        halting_proba = tf.ones(sh[:3])
+
+      halting_cumsum += halting_proba
+      # Which objects are no longer calculated after this timestep?
+      cur_elements_finished = (halting_cumsum >= 1 - eps)
+      # Zero out halting_proba for the previously finished positions.
+      halting_proba = tf.where(cur_elements_finished,
+                                tf.zeros(sh[:3]),
+                                halting_proba)
+      # Find positions which have halted at the current timestep.
+      just_finished = tf.logical_and(tf.logical_not(elements_finished),
+                                     cur_elements_finished)
+      # For such positions, the halting distribution value is the remainder.
+      # For others, it is the halting_proba.
+      cur_halting_distrib = tf.where(just_finished,
+                                      remainder,
+                                      halting_proba)
+
+      # Update ponder_cost. Add 1 to positions which are still computed,
+      # remainder to the positions which have just halted and
+      # 0 to the previously halted positions.
+      ponder_cost += tf.where(
+          cur_elements_finished,
+          tf.where(just_finished, remainder, tf.zeros(sh[:3])),
+          tf.ones(sh[:3]))
+
+      # Add a timestep to the positions that were active during this timestep
+      # (not the ones that will be active the next timestep).
+      num_timesteps += tf.to_int32(tf.logical_not(elements_finished))
+
+      # Add new state to the outputs weighted by the halting distribution.
+      update = state * tf.expand_dims(cur_halting_distrib, 3)
+      if timestep_idx:
+        outputs += update
+      else:
+        outputs = update
+
+      remainder -= halting_proba
+
+      elements_finished = cur_elements_finished
+
+      halting_distribs.append(cur_halting_distrib)
+
+  halting_distribution = tf.stack(halting_distribs, axis=3)
+
+  if not state_shape_fully_defined:
+    # Update static shape info. Faster RCNN code wants to know batch dimension
+    # statically.
+    outputs.set_shape(inputs.get_shape().as_list()[:1] + [None] * 3)
 
   return (ponder_cost, num_timesteps, flops, halting_distribution, outputs)

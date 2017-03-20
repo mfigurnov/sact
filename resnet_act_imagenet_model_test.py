@@ -113,8 +113,8 @@ class ResNetConvActImagenetModelTest(tf.test.TestCase):
       with slim.arg_scope(
           resnet.resnet_arg_scope(
               is_training=is_training,
-              conv_act_kernel_size=kernel_size,
-              conv_act_resolution=resolution)):
+              sact_kernel_size=kernel_size,
+              sact_resolution=resolution)):
         logits, end_points = resnet.get_network(images, [50], num_classes,
                                                 True, True)
         metrics = resnet_act_utils.act_metric_map(end_points, False)
@@ -173,13 +173,13 @@ class ResNetConvActImagenetModelTest(tf.test.TestCase):
         logits, end_points = resnet.get_network(images, [50], num_classes,
                                                 True, True)
 
-        vis_ponder = resnet_act_utils.conv_act_image_heatmap(
+        vis_ponder = resnet_act_utils.sact_image_heatmap(
             end_points,
             'ponder_cost',
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_timesteps = resnet_act_utils.conv_act_image_heatmap(
+        vis_timesteps = resnet_act_utils.sact_image_heatmap(
             end_points,
             'num_timesteps',
             num_images=num_images,

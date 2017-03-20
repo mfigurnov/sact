@@ -188,14 +188,14 @@ def layer_act(block,
               inputs,
               layer_idx,
               skip_halting_proba=False,
-              conv_act=False,
+              sact=False,
               residual_mask=None):
   with tf.variable_scope('unit_%d' % (layer_idx + 1), [inputs]):
     outputs, flops = block.unit_fn(
         inputs, *block.args[layer_idx], residual_mask=residual_mask)
 
     if not skip_halting_proba and layer_idx < len(block.args) - 1:
-      if conv_act:
+      if sact:
         halting_proba, current_flops = get_halting_proba_conv(outputs)
         flops += current_flops
       else:
@@ -208,7 +208,7 @@ def layer_act(block,
 
 
 def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
-                 conv_act=False, end_points=None):
+                 sact=False, end_points=None):
   """Utility function for assembling SACT models consisting of "blocks."""
   if end_points is None:
     end_points = {}
@@ -218,8 +218,8 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
 
   for block in blocks:
     if use_act:
-      if conv_act:
-        act_func = act.adaptive_computation_time_conv
+      if sact:
+        act_func = act.spatially_adaptive_computation_time
       else:
         if act_early_stopping:
           act_func = act.adaptive_computation_early_stopping
@@ -229,7 +229,7 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
       (ponder_cost, num_timesteps, flops, halting_distribution, net) = act_func(
           net,
           partial(
-              layer_act, block, conv_act=conv_act),
+              layer_act, block, sact=sact),
           len(block.args),
           scope=block.scope)
 
@@ -279,7 +279,7 @@ def get_finetuning_settings(finetune_path, lr_coeff=1.0):
   return (init_fn, gradient_multipliers)
 
 
-def conv_act_image_heatmap(end_points,
+def sact_image_heatmap(end_points,
                            metric_name,
                            num_images=5,
                            alpha=0.75,
@@ -331,7 +331,7 @@ def conv_act_image_heatmap(end_points,
 def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
   tf.image_summary(
       'heatmaps/ponder_cost',
-      conv_act_image_heatmap(
+      sact_image_heatmap(
           end_points,
           'ponder_cost',
           num_images=num_images,
@@ -339,7 +339,7 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
           border=border))
   tf.image_summary(
       'heatmaps/num_timesteps',
-      conv_act_image_heatmap(
+      sact_image_heatmap(
           end_points,
           'num_timesteps',
           num_images=num_images,
@@ -347,7 +347,7 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
           border=border))
 
 
-def conv_act_map(end_points, metric_name):
+def sact_map(end_points, metric_name):
   """Generates a headmap of the ponder cost for visualization."""
   assert metric_name in ('ponder_cost', 'num_timesteps')
 
@@ -372,7 +372,7 @@ def conv_act_map(end_points, metric_name):
 
 
 def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
-                 batch_size, conv_act):
+                 batch_size, sact):
   """Exports ponder cost maps and other useful info to an HDF5 file."""
   output_file = h5py.File(export_path, 'w')
 
@@ -387,9 +387,9 @@ def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
   keys_to_tensors['images'] = images
   keys_to_tensors['flops'] = end_points['flops']
 
-  if conv_act:
-    keys_to_tensors['ponder_cost_map'] = conv_act_map(end_points, 'ponder_cost')
-    keys_to_tensors['num_timesteps_map'] = conv_act_map(end_points,
+  if sact:
+    keys_to_tensors['ponder_cost_map'] = sact_map(end_points, 'ponder_cost')
+    keys_to_tensors['num_timesteps_map'] = sact_map(end_points,
                                                         'num_timesteps')
 
   keys_to_datasets = {}

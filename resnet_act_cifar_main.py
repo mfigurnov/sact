@@ -93,13 +93,13 @@ tf.app.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?'
 tf.app.flags.DEFINE_bool('use_act', False, 'Use ACT?')
 
 tf.app.flags.DEFINE_bool(
-    'conv_act', False,
+    'sact', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.app.flags.DEFINE_integer('conv_act_kernel_size', 3,
+tf.app.flags.DEFINE_integer('sact_kernel_size', 3,
                         'Kernel size for spatially ACT.')
 
-tf.app.flags.DEFINE_integer('conv_act_resolution', 0,
+tf.app.flags.DEFINE_integer('sact_resolution', 0,
                         'Resolution of spatially ACT halting probability.')
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
@@ -143,8 +143,8 @@ def train():
       with slim.arg_scope(
           resnet.resnet_arg_scope(
               is_training=True,
-              conv_act_kernel_size=FLAGS.conv_act_kernel_size,
-              conv_act_resolution=FLAGS.conv_act_resolution)):
+              sact_kernel_size=FLAGS.sact_kernel_size,
+              sact_resolution=FLAGS.sact_resolution)):
         num_residual_units = resnet_act_utils.parse_num_layers(
             FLAGS.num_residual_units)
         logits, end_points = resnet.resnet(
@@ -152,7 +152,7 @@ def train():
             num_residual_units=num_residual_units,
             num_classes=num_classes,
             use_act=FLAGS.use_act,
-            conv_act=FLAGS.conv_act)
+            sact=FLAGS.sact)
 
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(logits, one_hot_labels)
@@ -169,7 +169,7 @@ def train():
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
-        if FLAGS.use_act and FLAGS.conv_act:
+        if FLAGS.use_act and FLAGS.sact:
           resnet_act_utils.add_heatmaps_image_summary(end_points)
 
         init_fn, _ = resnet_act_utils.get_finetuning_settings(
@@ -222,8 +222,8 @@ def evaluate():
     with slim.arg_scope(
         resnet.resnet_arg_scope(
             is_training=False,
-            conv_act_kernel_size=FLAGS.conv_act_kernel_size,
-            conv_act_resolution=FLAGS.conv_act_resolution)):
+            sact_kernel_size=FLAGS.sact_kernel_size,
+            sact_resolution=FLAGS.sact_resolution)):
       num_residual_units = resnet_act_utils.parse_num_layers(
           FLAGS.num_residual_units)
       logits, end_points = resnet.resnet(
@@ -231,7 +231,7 @@ def evaluate():
           num_residual_units=num_residual_units,
           num_classes=num_classes,
           use_act=FLAGS.use_act,
-          conv_act=FLAGS.conv_act)
+          sact=FLAGS.sact)
 
       predictions = tf.argmax(logits, 1)
 
@@ -259,7 +259,7 @@ def evaluate():
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
-      if FLAGS.use_act and FLAGS.conv_act:
+      if FLAGS.use_act and FLAGS.sact:
         resnet_act_utils.add_heatmaps_image_summary(end_points)
 
       # This ensures that we make a single pass over all of the data.

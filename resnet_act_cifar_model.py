@@ -98,7 +98,7 @@ def resnet(inputs,
            num_residual_units,
            num_classes,
            use_act=False,
-           conv_act=False,
+           sact=False,
            scope='resnet_residual'):
   """Builds a CIFAR-10 resnet model."""
   num_blocks = 3
@@ -130,7 +130,7 @@ def resnet(inputs,
         blocks,
         use_act=use_act,
         act_early_stopping=True,
-        conv_act=conv_act,
+        sact=sact,
         end_points=end_points)
     net = tf.reduce_mean(net, [1, 2], keep_dims=True)
     net = slim.batch_norm(net)
@@ -147,8 +147,8 @@ def resnet(inputs,
 
 
 def resnet_arg_scope(is_training=True,
-                     conv_act_kernel_size=1,
-                     conv_act_resolution=0):
+                     sact_kernel_size=1,
+                     sact_resolution=0):
   """Sets up the default arguments for the CIFAR-10 resnet model."""
   batch_norm_params = {
       'is_training':
@@ -176,6 +176,6 @@ def resnet_arg_scope(is_training=True,
         with slim.arg_scope([slim.batch_norm], **batch_norm_params):
           with slim.arg_scope(
               [resnet_act_utils.get_halting_proba_conv],
-              kernel_size=conv_act_kernel_size,
-              resolution=conv_act_resolution) as arg_sc:
+              kernel_size=sact_kernel_size,
+              resolution=sact_resolution) as arg_sc:
             return arg_sc

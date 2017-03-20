@@ -41,7 +41,7 @@ class ResnetActUtilsTest(tf.test.TestCase):
         'block_1/ponder_cost': 5 * tf.ones([batch, height / 2, width / 2]),
     }
 
-    heatmap = resnet_act_utils.conv_act_image_heatmap(
+    heatmap = resnet_act_utils.sact_image_heatmap(
         end_points,
         'ponder_cost',
         num_images=num_images,

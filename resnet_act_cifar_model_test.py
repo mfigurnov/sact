@@ -42,7 +42,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
             num_residual_units=num_residual_units,
             num_classes=num_classes,
             use_act=use_act,
-            conv_act=False)
+            sact=False)
         if use_act:
           metrics = resnet_act_utils.act_metric_map(end_points, False)
           metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
@@ -99,7 +99,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
             num_residual_units=[18],
             num_classes=num_classes,
             use_act=False,
-            conv_act=False)
+            sact=False)
         flops = sess.run(end_points['flops'])
         # TF graph_metrics value: 506307850 (0.1% difference)
         expected_flops = 505775360
@@ -116,8 +116,8 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
     with slim.arg_scope(
         resnet.resnet_arg_scope(
             is_training=is_training,
-            conv_act_kernel_size=kernel_size,
-            conv_act_resolution=resolution)):
+            sact_kernel_size=kernel_size,
+            sact_resolution=resolution)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = resnet.resnet(
@@ -125,7 +125,7 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
             num_residual_units=[5] * 3,
             num_classes=num_classes,
             use_act=True,
-            conv_act=True)
+            sact=True)
         metrics = resnet_act_utils.act_metric_map(end_points, False)
         metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
 
@@ -183,15 +183,15 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
             num_residual_units=[5] * 3,
             num_classes=num_classes,
             use_act=True,
-            conv_act=True)
+            sact=True)
 
-        vis_ponder = resnet_act_utils.conv_act_image_heatmap(
+        vis_ponder = resnet_act_utils.sact_image_heatmap(
             end_points,
             'ponder_cost',
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_timesteps = resnet_act_utils.conv_act_image_heatmap(
+        vis_timesteps = resnet_act_utils.sact_image_heatmap(
             end_points,
             'num_timesteps',
             num_images=num_images,

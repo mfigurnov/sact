@@ -78,8 +78,8 @@ Or, for _spatially_ adaptive computation time:
 
 ``` bash
 export SACT_LOGDIR='/tmp/resnet_sact_cifar'
-bazel-bin/resnet_act_cifar_main --use_act=True --conv_act=True --tau=0.01 --train_log_dir="${SACT_LOGDIR}/train" --save_summaries_secs=300 &
-bazel-bin/resnet_act_cifar_main --use_act=True --conv_act=True --tau=0.01 --checkpoint_dir="${SACT_LOGDIR}/train" --eval_dir="${SACT_LOGDIR}/eval" --mode=eval
+bazel-bin/resnet_act_cifar_main --use_act=True --sact=True --tau=0.01 --train_log_dir="${SACT_LOGDIR}/train" --save_summaries_secs=300 &
+bazel-bin/resnet_act_cifar_main --use_act=True --sact=True --tau=0.01 --checkpoint_dir="${SACT_LOGDIR}/train" --eval_dir="${SACT_LOGDIR}/eval" --mode=eval
 ```
 
 To evaluate a pretrained ACT-Resnet model:
@@ -111,7 +111,7 @@ bazel-bin/inception/download_and_preprocess_imagenet "${HOME}/tensorflow/data/im
 
 cd "${HOME}/sact"
 bazel build :resnet_act_imagenet_eval --nocheck_visibility
-bazel-bin/resnet_act_imagenet_eval --use_act=True --conv_act=True --evaluate_once --tau=0.001 --checkpoint_dir=models/inet_resnet_v2_101_im_224_lr_0.05_conv_act_0.001_res_0_ker_1_bias-3_50/train --conv_act_kernel_size=1
+bazel-bin/resnet_act_imagenet_eval --use_act=True --sact=True --evaluate_once --tau=0.001 --checkpoint_dir=models/inet_resnet_v2_101_im_224_lr_0.05_sact_0.001_res_0_ker_1_bias-3_50/train --sact_kernel_size=1
 ```
 
 Note that evaluation on the full validation dataset will take some time
@@ -125,7 +125,7 @@ For more detailed output on a few images:
 
 ``` bash
 bazel build :resnet_act_imagenet_export --nocheck_visibility
-bazel-bin/resnet_act_imagenet_export --num_examples=3 --conv_act_kernel_size=1 --conv_act=True --checkpoint_path=models/inet_resnet_v2_101_im_224_lr_0.05_conv_act_0.001_res_0_ker_1_bias-3_50/train/model.ckpt-6266164 --export_path=/tmp/maps.h5 --batch_size=1
+bazel-bin/resnet_act_imagenet_export --num_examples=3 --sact_kernel_size=1 --sact=True --checkpoint_path=models/inet_resnet_v2_101_im_224_lr_0.05_sact_0.001_res_0_ker_1_bias-3_50/train/model.ckpt-6266164 --export_path=/tmp/maps.h5 --batch_size=1
 
 mkdir /tmp/maps
 python python/plot_ponder_maps.py --input_file=/tmp/maps.h5 --output_dir=/tmp/maps

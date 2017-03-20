@@ -169,7 +169,7 @@ def get_halting_proba_conv(outputs,
           1,
           activation_fn=None,
           normalizer_fn=None,
-          biases_initializer=None,  # biases are already present in local proba
+          biases_initializer=None,  # biases are already present in local logits
           scope='global_conv')
       flops += current_flops
 
@@ -184,17 +184,17 @@ def get_halting_proba_conv(outputs,
     return halting_proba, flops
 
 
-def layer_act(block,
+def unit_act(block,
               inputs,
-              layer_idx,
+              unit_idx,
               skip_halting_proba=False,
               sact=False,
               residual_mask=None):
-  with tf.variable_scope('unit_%d' % (layer_idx + 1), [inputs]):
+  with tf.variable_scope('unit_%d' % (unit_idx + 1), [inputs]):
     outputs, flops = block.unit_fn(
-        inputs, *block.args[layer_idx], residual_mask=residual_mask)
+        inputs, *block.args[unit_idx], residual_mask=residual_mask)
 
-    if not skip_halting_proba and layer_idx < len(block.args) - 1:
+    if not skip_halting_proba and unit_idx < len(block.args) - 1:
       if sact:
         halting_proba, current_flops = get_halting_proba_conv(outputs)
         flops += current_flops
@@ -229,7 +229,7 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
       (ponder_cost, num_units, flops, halting_distribution, net) = act_func(
           net,
           partial(
-              layer_act, block, sact=sact),
+              unit_act, block, sact=sact),
           len(block.args),
           scope=block.scope)
 
@@ -240,9 +240,9 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
     else:
       with tf.variable_scope(block.scope, 'block', [net]):
         flops = 0
-        for layer_idx in range(len(block.args)):
-          net, _, current_flops = layer_act(
-              block, net, layer_idx, skip_halting_proba=True)
+        for unit_idx in range(len(block.args)):
+          net, _, current_flops = unit_act(
+              block, net, unit_idx, skip_halting_proba=True)
           flops += current_flops
 
     end_points['{}/flops'.format(block.scope)] = flops
@@ -329,7 +329,7 @@ def sact_image_heatmap(end_points,
 
 
 def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
-  tf.image_summary(
+  tf.summary.image(
       'heatmaps/ponder_cost',
       sact_image_heatmap(
           end_points,
@@ -337,7 +337,7 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
           num_images=num_images,
           alpha=alpha,
           border=border))
-  tf.image_summary(
+  tf.summary.image(
       'heatmaps/num_units',
       sact_image_heatmap(
           end_points,

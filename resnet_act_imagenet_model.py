@@ -171,7 +171,7 @@ def resnet_arg_scope(is_training=True,
 
 
 def get_network(images,
-                num_layers,
+                model,
                 num_classes,
                 use_act,
                 sact,
@@ -184,25 +184,27 @@ def get_network(images,
   # current block. Here we perform downsampling in the first layer of the next
   # block. This is consistent with the ResNet paper.
   num_blocks = 4
-  if len(num_layers) == 1:
+  if len(model) == 1:
     standard_networks = {
         50: [3, 4, 6, 3],
         101: [3, 4, 23, 3],
         152: [3, 8, 36, 3],
         200: [3, 24, 36, 3],
     }
-    num_layers = standard_networks[num_layers[0]]
-  assert len(num_layers) == num_blocks
+    num_units = standard_networks[model[0]]
+  else:
+    num_units = model
+  assert len(num_units) == num_blocks
 
   b = resnet_utils.Block
   blocks = [
-      b('block1', bottleneck, [(256, 64, 1)] * num_layers[0]),
+      b('block1', bottleneck, [(256, 64, 1)] * num_units[0]),
       b('block2', bottleneck,
-        [(512, 128, 2)] + [(512, 128, 1)] * (num_layers[1] - 1)),
+        [(512, 128, 2)] + [(512, 128, 1)] * (num_units[1] - 1)),
       b('block3', bottleneck,
-        [(1024, 256, 2)] + [(1024, 256, 1)] * (num_layers[2] - 1)),
+        [(1024, 256, 2)] + [(1024, 256, 1)] * (num_units[2] - 1)),
       b('block4', bottleneck,
-        [(2048, 512, 2)] + [(2048, 512, 1)] * (num_layers[3] - 1)),
+        [(2048, 512, 2)] + [(2048, 512, 1)] * (num_units[3] - 1)),
   ]
 
   logits, end_points = resnet_v2(

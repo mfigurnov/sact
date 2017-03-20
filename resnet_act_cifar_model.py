@@ -95,27 +95,26 @@ def residual(inputs,
 
 
 def resnet(inputs,
-           num_residual_units,
+           model,
            num_classes,
            use_act=False,
            sact=False,
            scope='resnet_residual'):
   """Builds a CIFAR-10 resnet model."""
   num_blocks = 3
-  if len(num_residual_units) == 1:
-    num_residual_units *= num_blocks
-  assert len(num_residual_units) == num_blocks
+  num_units = model
+  if len(num_units) == 1:
+    num_units *= num_blocks
+  assert len(num_units) == num_blocks
 
+  b = resnet_utils.Block
   blocks = [
-      resnet_utils.Block('block_1', residual,
-                         [(16, 1, True)] + [(16, 1, False)] *
-                         (num_residual_units[0] - 1)),
-      resnet_utils.Block('block_2', residual,
-                         [(32, 2, False)] + [(32, 1, False)] *
-                         (num_residual_units[1] - 1)),
-      resnet_utils.Block('block_3', residual,
-                         [(64, 2, False)] + [(64, 1, False)] *
-                         (num_residual_units[2] - 1))
+    b('block_1', residual,
+      [(16, 1, True)] + [(16, 1, False)] * (num_units[0] - 1)),
+    b('block_2', residual,
+      [(32, 2, False)] + [(32, 1, False)] * (num_units[1] - 1)),
+    b('block_3', residual,
+      [(64, 2, False)] + [(64, 1, False)] * (num_units[2] - 1))
   ]
 
   with tf.variable_scope(scope, [inputs]):

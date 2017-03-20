@@ -29,7 +29,7 @@ import resnet_act_cifar_model as resnet
 
 class ResNetActCifarModelTest(tf.test.TestCase):
 
-  def _runBatch(self, is_training, use_act, num_residual_units=[5]):
+  def _runBatch(self, is_training, use_act, model=[5]):
     batch_size = 3
     height, width = 32, 32
     num_classes = 10
@@ -39,7 +39,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = resnet.resnet(
             images,
-            num_residual_units=num_residual_units,
+            model=model,
             num_classes=num_classes,
             use_act=use_act,
             sact=False)
@@ -81,7 +81,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
 
   def testTestNoActResidualUnits(self):
     self._runBatch(
-        is_training=False, use_act=False, num_residual_units=[1, 2, 3])
+        is_training=False, use_act=False, model=[1, 2, 3])
 
   def testTestAct(self):
     self._runBatch(is_training=False, use_act=True)
@@ -96,7 +96,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         _, end_points = resnet.resnet(
             images,
-            num_residual_units=[18],
+            model=[18],
             num_classes=num_classes,
             use_act=False,
             sact=False)
@@ -122,7 +122,7 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = resnet.resnet(
             images,
-            num_residual_units=[5] * 3,
+            model=[5] * 3,
             num_classes=num_classes,
             use_act=True,
             sact=True)
@@ -180,7 +180,7 @@ class ResNetConvActCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = resnet.resnet(
             images,
-            num_residual_units=[5] * 3,
+            model=[5] * 3,
             num_classes=num_classes,
             use_act=True,
             sact=True)

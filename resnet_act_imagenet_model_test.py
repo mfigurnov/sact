@@ -32,7 +32,7 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
   def _runBatch(self,
                 is_training,
                 use_act,
-                num_layers=[50]):
+                model=[50]):
     batch_size = 3
     height, width = 224, 224
     num_classes = 10
@@ -40,7 +40,7 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
     with self.test_session() as sess:
       images = tf.random_uniform((batch_size, height, width, 3))
       with slim.arg_scope(resnet.resnet_arg_scope(is_training=is_training)):
-        logits, end_points = resnet.get_network(images, num_layers, num_classes,
+        logits, end_points = resnet.get_network(images, model, num_classes,
                                                 use_act, False)
         if use_act:
           metrics = resnet_act_utils.act_metric_map(end_points, False)
@@ -82,8 +82,8 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
   def testTestAct(self):
     self._runBatch(is_training=False, use_act=True)
 
-  def testTestNumLayers(self):
-    self._runBatch(is_training=False, use_act=False, num_layers=[3, 4, 6, 3])
+  def testTestModel(self):
+    self._runBatch(is_training=False, use_act=False, model=[3, 4, 6, 3])
 
   def testFlopsNoAct(self):
     batch_size = 3

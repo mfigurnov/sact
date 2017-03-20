@@ -36,7 +36,7 @@ class ResnetActUtilsTest(tf.test.TestCase):
 
     end_points = {
         'inputs': tf.ones([batch, height, width, channels]),
-        'block_num_layers': [10],
+        'block_num_units': [10],
         'block_scopes': ['block_1'],
         'block_1/ponder_cost': 5 * tf.ones([batch, height / 2, width / 2]),
     }

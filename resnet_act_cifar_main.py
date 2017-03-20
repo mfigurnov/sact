@@ -107,9 +107,11 @@ tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).'
 tf.app.flags.DEFINE_float('learning_rate_mult', 1.0,
                       'Multiplier for learning rate.')
 
-tf.app.flags.DEFINE_string('num_residual_units', '18',
-                       'An underscore separated string, number of residual '
-                       'units in each block.')
+tf.app.flags.DEFINE_string(
+  'model',
+  '18',
+  'An underscore separated string, number of residual units per block. '
+  'If only one number is provided, uses the same number of units in all blocks')
 
 tf.app.flags.DEFINE_string('finetune_path', '',
                        'Path for the initial checkpoint for finetuning.')
@@ -145,11 +147,10 @@ def train():
               is_training=True,
               sact_kernel_size=FLAGS.sact_kernel_size,
               sact_resolution=FLAGS.sact_resolution)):
-        num_residual_units = resnet_act_utils.parse_num_layers(
-            FLAGS.num_residual_units)
+        model = resnet_act_utils.split_and_int(FLAGS.model)
         logits, end_points = resnet.resnet(
             images,
-            num_residual_units=num_residual_units,
+            model=model,
             num_classes=num_classes,
             use_act=FLAGS.use_act,
             sact=FLAGS.sact)

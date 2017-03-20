@@ -87,7 +87,7 @@ tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
                      'The decay to use for the moving average.')
 
 tf.app.flags.DEFINE_string(
-    'num_layers', '101',
+    'model', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
@@ -135,10 +135,10 @@ def main(_):
               is_training=True,
               sact_kernel_size=FLAGS.sact_kernel_size,
               sact_resolution=FLAGS.sact_resolution)):
-        num_layers = resnet_act_utils.parse_num_layers(FLAGS.num_layers)
+        model = resnet_act_utils.split_and_int(FLAGS.model)
         logits, end_points = resnet_act_imagenet_model.get_network(
             images,
-            num_layers,
+            model,
             num_classes,
             use_act=FLAGS.use_act,
             sact=FLAGS.sact)

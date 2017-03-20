@@ -214,7 +214,7 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
     end_points = {}
   end_points['flops'] = end_points.get('flops', 0)
   end_points['block_scopes'] = [block.scope for block in blocks]
-  end_points['block_num_layers'] = [len(block.args) for block in blocks]
+  end_points['block_num_units'] = [len(block.args) for block in blocks]
 
   for block in blocks:
     if use_act:
@@ -301,9 +301,9 @@ def sact_image_heatmap(end_points,
 
   resolution = tf.shape(images)[1:3]
 
-  max_value = sum(end_points['block_num_layers'])
+  max_value = sum(end_points['block_num_units'])
   if metric_name == 'ponder_cost':
-    max_value += len(end_points['block_num_layers'])
+    max_value += len(end_points['block_num_units'])
 
   heatmaps = []
   for scope in end_points['block_scopes']:
@@ -425,5 +425,5 @@ def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
         dataset[i * batch_size:(i + 1) * batch_size, ...] = end_points_out[key]
 
 
-def parse_num_layers(num_layers_string):
-  return [int(x) for x in num_layers_string.split('_')]
+def split_and_int(s):
+  return [int(x) for x in s.split('_')]

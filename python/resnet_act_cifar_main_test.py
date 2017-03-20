@@ -22,35 +22,35 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-import resnet_act_cifar_main
-
-
-FLAGS = tf.app.flags.FLAGS
-
-
-class ResNetActCifarMainTest(tf.test.TestCase):
-
-  def testTrain(self):
-    FLAGS.batch_size = 4
-    FLAGS.max_number_of_steps = 1
-    FLAGS.save_interval_secs = 0
-    FLAGS.train_log_dir = ''
-    FLAGS.num_residual_units = '5'
-    FLAGS.use_act = True
-    FLAGS.dataset_dir = 'testdata/cifar10'
-    resnet_act_cifar_main.train()
-
-  # TODO: re-enable after training a new baseline model
-  # def testTrainFinetune(self):
-    # FLAGS.batch_size = 4
-    # FLAGS.max_number_of_steps = 1
-    # FLAGS.save_interval_secs = 0
-    # FLAGS.finetune_path = '../models/cifar10_5_act_false_tau_0_v2/train/model.ckpt-100000'
-    # FLAGS.train_log_dir = ''
-    # FLAGS.num_residitual_units = '5'
-    # FLAGS.use_act = True
-    # FLAGS.dataset_dir = 'testdata/cifar10'
-    # resnet_act_cifar_main.train()
+# import resnet_act_cifar_main
+#
+#
+# FLAGS = tf.app.flags.FLAGS
+#
+#
+# class _ResNetActCifarMainTest(tf.test.TestCase):
+#
+#   def testTrain(self):
+#     FLAGS.batch_size = 4
+#     FLAGS.max_number_of_steps = 1
+#     FLAGS.save_interval_secs = 0
+#     FLAGS.train_log_dir = ''
+#     FLAGS.num_residual_units = '5'
+#     FLAGS.use_act = True
+#     FLAGS.dataset_dir = 'testdata/cifar10'
+#     resnet_act_cifar_main.train()
+#
+#   # TODO: re-enable after training a new baseline model
+#   # def testTrainFinetune(self):
+#     # FLAGS.batch_size = 4
+#     # FLAGS.max_number_of_steps = 1
+#     # FLAGS.save_interval_secs = 0
+#     # FLAGS.finetune_path = '../models/cifar10_5_act_false_tau_0_v2/train/model.ckpt-100000'
+#     # FLAGS.train_log_dir = ''
+#     # FLAGS.num_residitual_units = '5'
+#     # FLAGS.use_act = True
+#     # FLAGS.dataset_dir = 'testdata/cifar10'
+#     # resnet_act_cifar_main.train()
 
 
 if __name__ == '__main__':

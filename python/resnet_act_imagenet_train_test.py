@@ -21,23 +21,23 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-import resnet_act_imagenet_train
-
-
-FLAGS = tf.app.flags.FLAGS
-
-
-class ResNetActImagenetTest(tf.test.TestCase):
-
-  def testTrain(self):
-    FLAGS.batch_size = 4
-    FLAGS.max_number_of_steps = 1
-    FLAGS.save_interval_secs = 0
-    FLAGS.train_log_dir = ''
-    FLAGS.num_layers = '50'
-    FLAGS.use_act = True
-    FLAGS.dataset_dir = 'testdata/imagenet'
-    resnet_act_imagenet_train.main(None)
+# import resnet_act_imagenet_train
+#
+#
+# FLAGS = tf.app.flags.FLAGS
+#
+#
+# class ResNetActImagenetTest(tf.test.TestCase):
+#
+#   def testTrain(self):
+#     FLAGS.batch_size = 4
+#     FLAGS.max_number_of_steps = 1
+#     FLAGS.save_interval_secs = 0
+#     FLAGS.train_log_dir = ''
+#     FLAGS.num_layers = '50'
+#     FLAGS.use_act = True
+#     FLAGS.dataset_dir = 'testdata/imagenet'
+#     resnet_act_imagenet_train.main(None)
 
 
 if __name__ == '__main__':

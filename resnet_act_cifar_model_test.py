@@ -106,7 +106,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
         self.assertAllEqual(flops, [expected_flops] * 3)
 
 
-class ResNetConvActCifarModelTest(tf.test.TestCase):
+class ResNetSactCifarModelTest(tf.test.TestCase):
 
   def _runBatch(self, is_training, kernel_size, resolution):
     batch_size = 3

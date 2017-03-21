@@ -38,14 +38,13 @@ tf.app.flags.DEFINE_string('mode', 'train', 'One of "train" or "eval".')
 
 # Training settings
 tf.app.flags.DEFINE_integer('batch_size', 128,
-                        'The number of images in each batch.')
-
+                            'The number of images in each batch.')
 
 tf.app.flags.DEFINE_string('master', '',
-                       'Name of the TensorFlow master to use.')
+                           'Name of the TensorFlow master to use.')
 
 tf.app.flags.DEFINE_string('train_log_dir', '/tmp/resnet_act_cifar/',
-                       'Directory where to write event logs.')
+                           'Directory where to write event logs.')
 
 tf.app.flags.DEFINE_integer(
     'save_summaries_secs', 30,
@@ -56,7 +55,7 @@ tf.app.flags.DEFINE_integer(
     'The frequency with which the model is saved, in seconds.')
 
 tf.app.flags.DEFINE_integer('max_number_of_steps', 100000,
-                        'The maximum number of gradient steps.')
+                            'The maximum number of gradient steps.')
 
 tf.app.flags.DEFINE_integer(
     'ps_tasks', 0,
@@ -75,13 +74,13 @@ tf.app.flags.DEFINE_string(
 
 # Evaluation settings
 tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet_act_cifar/',
-                       'Directory where the model was written to.')
+                           'Directory where the model was written to.')
 
 tf.app.flags.DEFINE_string('eval_dir', '/tmp/resnet_act_cifar/',
-                       'Directory where the results are saved to.')
+                           'Directory where the results are saved to.')
 
 tf.app.flags.DEFINE_integer('eval_batch_size', 100,
-                        'The number of images in each batch for evaluation.')
+                            'The number of images in each batch for evaluation.')
 
 tf.app.flags.DEFINE_integer(
     'eval_interval_secs', 60,
@@ -107,7 +106,7 @@ tf.app.flags.DEFINE_string(
   'If only one number is provided, uses the same number of units in all blocks')
 
 tf.app.flags.DEFINE_string('finetune_path', '',
-                       'Path for the initial checkpoint for finetuning.')
+                           'Path for the initial checkpoint for finetuning.')
 
 
 def train():
@@ -172,6 +171,9 @@ def train():
         else:
           logdir = None
 
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+
         # Run training.
         slim.learning.train(
             train_op=train_op,
@@ -180,7 +182,8 @@ def train():
             master=FLAGS.master,
             number_of_steps=FLAGS.max_number_of_steps,
             save_summaries_secs=FLAGS.save_summaries_secs,
-            save_interval_secs=FLAGS.save_interval_secs)
+            save_interval_secs=FLAGS.save_interval_secs,
+            session_config=config)
 
 
 def evaluate():
@@ -241,12 +244,16 @@ def evaluate():
         assert checkpoint_path is not None
         eval_kwargs = {}
 
+      config = tf.ConfigProto()
+      config.gpu_options.allow_growth = True
+
       eval_function(
           FLAGS.master,
           checkpoint_path,
           logdir=FLAGS.eval_dir,
           num_evals=num_batches,
           eval_op=names_to_updates.values(),
+          session_config=config,
           **eval_kwargs)
 
 

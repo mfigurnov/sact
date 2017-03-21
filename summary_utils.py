@@ -57,7 +57,7 @@ def act_metric_map(end_points, mean_metric):
     num_units_map = moments_metric_map(num_units, name)
     metric_map.update(num_units_map)
 
-    name = '{}/num_units_executed'.format(block_scope)
+    name = '{}/num_units_max'.format(block_scope)
     metric_map[name] = tf.reduce_max(num_units)
 
   if mean_metric:

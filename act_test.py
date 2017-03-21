@@ -401,7 +401,7 @@ class SactTest(tf.test.TestCase):
                   [2], dtype=tf.int64))
 
     (_, _, _, _, outputs) = act.spatially_adaptive_computation_time(
-      inputs, unit, max_units)
+        inputs, unit, max_units)
     with self.test_session() as sess:
       (inputs_out, outputs_out) = sess.run((inputs, outputs))
       self.assertAllClose(inputs_out, outputs_out)
@@ -430,7 +430,7 @@ class SactTest(tf.test.TestCase):
 
     inputs = tf.zeros(sh)
     (_, _, _, _, outputs) = act.spatially_adaptive_computation_time(
-      inputs, unit, max_units)
+        inputs, unit, max_units)
     with self.test_session() as sess:
       unit_outputs_out, final_outputs_out = sess.run(
           (unit_outputs, outputs))

@@ -93,12 +93,12 @@ def adaptive_computation_time(halting_proba, eps=1e-2):
   # Fill the first N steps with the halting probabilities.
   # Next values are zero.
   p = tf.where(tf.less(unit_index, N[:, None]),
-                halting_padded,
-                tf.zeros((batch, max_units)))
+               halting_padded,
+               tf.zeros((batch, max_units)))
   # Fill the (N+1)-st step with the remainder value.
   p = tf.where(tf.equal(unit_index, N[:, None]),
-                tf.tile(remainder[:, None], tf.stack([1, max_units])),
-                p)
+               tf.tile(remainder[:, None], tf.stack([1, max_units])),
+               p)
   halting_distribution = p
 
   return (ponder_cost, num_units, halting_distribution)
@@ -129,10 +129,10 @@ def adaptive_computation_time_wrapper(inputs, unit, max_units,
   fails.
   """
   states, halting_probas, all_flops = run_units(inputs, unit,
-                                                    max_units, scope)
+                                                max_units, scope)
 
   (ponder_cost, num_units, halting_distribution) = \
-      adaptive_computation_time(tf.concat(halting_probas[:-1], 1))
+      adaptive_computation_time(tf.concat(halting_probas[:-1], 1), eps=eps)
 
   if states[0].get_shape().is_fully_defined():
     sh = states[0].get_shape().as_list()
@@ -223,16 +223,16 @@ def adaptive_computation_early_stopping(inputs, unit, max_units,
     cur_elements_finished = (halting_cumsum >= 1 - eps)
     # Zero out halting_proba for the previously finished objects.
     halting_proba = tf.where(cur_elements_finished,
-                              tf.zeros([batch]),
-                              halting_proba)
+                             tf.zeros([batch]),
+                             halting_proba)
     # Find objects which have halted at the current unit.
     just_finished = tf.logical_and(tf.logical_not(elements_finished),
                                    cur_elements_finished)
     # For such objects, the halting distribution value is the remainder.
     # For others, it is the halting_proba.
     cur_halting_distrib = tf.where(just_finished,
-                                    remainder,
-                                    halting_proba)
+                                   remainder,
+                                   halting_proba)
 
     # Update ponder_cost. Add 1 to objects which are still computed,
     # remainder to the objects which have just halted and
@@ -388,16 +388,16 @@ def spatially_adaptive_computation_time(inputs, unit, max_units,
       cur_elements_finished = (halting_cumsum >= 1 - eps)
       # Zero out halting_proba for the previously finished positions.
       halting_proba = tf.where(cur_elements_finished,
-                                tf.zeros(sh[:3]),
-                                halting_proba)
+                               tf.zeros(sh[:3]),
+                               halting_proba)
       # Find positions which have halted at the current unit.
       just_finished = tf.logical_and(tf.logical_not(elements_finished),
                                      cur_elements_finished)
       # For such positions, the halting distribution value is the remainder.
       # For others, it is the halting_proba.
       cur_halting_distrib = tf.where(just_finished,
-                                      remainder,
-                                      halting_proba)
+                                     remainder,
+                                     halting_proba)
 
       # Update ponder_cost. Add 1 to positions which are still computed,
       # remainder to the positions which have just halted and

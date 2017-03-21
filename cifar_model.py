@@ -28,12 +28,10 @@ import flopsometer
 import resnet_act
 
 
-@slim.add_arg_scope
-def lrelu(x, leakiness):
+def lrelu(x, leakiness=0.1):
   return tf.maximum(x, x * leakiness)
 
 
-@slim.add_arg_scope
 def residual(inputs,
              depth,
              stride,
@@ -162,13 +160,12 @@ def resnet_arg_scope(is_training=True):
           None,
   }
 
-  with slim.arg_scope([lrelu], leakiness=0.1):
-    with slim.arg_scope([slim.conv2d, slim.batch_norm], activation_fn=lrelu):
-      with slim.arg_scope(
-          [slim.conv2d],
-          weights_regularizer=slim.l2_regularizer(0.0002),
-          weights_initializer=slim.variance_scaling_initializer(),
-          normalizer_fn=slim.batch_norm,
-          normalizer_params=batch_norm_params):
-        with slim.arg_scope([slim.batch_norm], **batch_norm_params) as arg_sc:
-          return arg_sc
+  with slim.arg_scope([slim.conv2d, slim.batch_norm], activation_fn=lrelu):
+    with slim.arg_scope(
+        [slim.conv2d],
+        weights_regularizer=slim.l2_regularizer(0.0002),
+        weights_initializer=slim.variance_scaling_initializer(),
+        normalizer_fn=slim.batch_norm,
+        normalizer_params=batch_norm_params):
+      with slim.arg_scope([slim.batch_norm], **batch_norm_params) as arg_sc:
+        return arg_sc

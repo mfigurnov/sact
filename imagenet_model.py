@@ -29,7 +29,6 @@ import flopsometer
 import resnet_act
 
 
-@slim.add_arg_scope
 def bottleneck(inputs,
                depth,
                depth_bottleneck,

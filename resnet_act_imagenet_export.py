@@ -40,7 +40,7 @@ tf.app.flags.DEFINE_string(
     'The name of the train/test split, either \'train\' or \'validation\'.')
 
 tf.app.flags.DEFINE_string(
-    'num_layers', '101',
+    'model', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
@@ -49,12 +49,6 @@ tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
 tf.app.flags.DEFINE_bool(
     'sact', False,
     'Use spatially ACT? Active only when use_act=True.')
-
-tf.app.flags.DEFINE_integer('sact_kernel_size', 3,
-                       'Kernel size for spatially ACT.')
-
-tf.app.flags.DEFINE_integer('sact_resolution', 0,
-                        'Resolution of spatially ACT halting probability.')
 
 tf.app.flags.DEFINE_string('checkpoint_path', '',
                        'Path for the checkpoint to process.')
@@ -79,14 +73,11 @@ def main(_):
 
     # Define the model:
     with slim.arg_scope(
-        resnet_act_imagenet_model.resnet_arg_scope(
-            is_training=False,
-            sact_kernel_size=FLAGS.sact_kernel_size,
-            sact_resolution=FLAGS.sact_resolution)):
-      num_layers = resnet_act_utils.parse_num_layers(FLAGS.num_layers)
+        resnet_act_imagenet_model.resnet_arg_scope(is_training=False)):
+      model = resnet_act_utils.split_and_int(FLAGS.model)
       logits, end_points = resnet_act_imagenet_model.get_network(
           images,
-          num_layers,
+          model,
           num_classes,
           use_act=FLAGS.use_act,
           sact=FLAGS.sact)

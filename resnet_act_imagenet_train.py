@@ -97,12 +97,6 @@ tf.app.flags.DEFINE_bool(
     'sact', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.app.flags.DEFINE_integer('sact_kernel_size', 3,
-                        'Kernel size for spatially ACT.')
-
-tf.app.flags.DEFINE_integer('sact_resolution', 0,
-                        'Resolution of spatially ACT halting probability.')
-
 tf.app.flags.DEFINE_float('tau', 1.0, 'Target value of tau (ponder relative cost).')
 
 tf.app.flags.DEFINE_float(
@@ -131,10 +125,7 @@ def main(_):
 
       # Define the model:
       with slim.arg_scope(
-          resnet_act_imagenet_model.resnet_arg_scope(
-              is_training=True,
-              sact_kernel_size=FLAGS.sact_kernel_size,
-              sact_resolution=FLAGS.sact_resolution)):
+          resnet_act_imagenet_model.resnet_arg_scope(is_training=True)):
         model = resnet_act_utils.split_and_int(FLAGS.model)
         logits, end_points = resnet_act_imagenet_model.get_network(
             images,

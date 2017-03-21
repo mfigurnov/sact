@@ -153,21 +153,14 @@ def resnet_v2(inputs,
     return net, end_points
 
 
-def resnet_arg_scope(is_training=True,
-                     weight_decay=0.0001,
-                     sact_kernel_size=1,
-                     sact_resolution=0):
+def resnet_arg_scope(is_training=True, weight_decay=0.0001):
   with slim.arg_scope(
       resnet_utils.resnet_arg_scope(
           is_training, weight_decay=weight_decay)):
     # This forces batch_norm to compute the moving averages in-place
     # instead of using a global collection which does not work with tf.cond.
-    with slim.arg_scope([slim.batch_norm], updates_collections=None):
-      with slim.arg_scope(
-          [resnet_act_utils.get_halting_proba_conv],
-          kernel_size=sact_kernel_size,
-          resolution=sact_resolution) as arg_sc:
-        return arg_sc
+    with slim.arg_scope([slim.batch_norm], updates_collections=None) as arg_sc:
+      return arg_sc
 
 
 def get_network(images,

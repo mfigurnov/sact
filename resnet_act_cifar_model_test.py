@@ -108,16 +108,14 @@ class ResNetActCifarModelTest(tf.test.TestCase):
 
 class ResNetSactCifarModelTest(tf.test.TestCase):
 
-  def _runBatch(self, is_training, kernel_size, resolution):
+  def _runBatch(self, is_training):
     batch_size = 3
     height, width = 32, 32
     num_classes = 10
 
     with slim.arg_scope(
         resnet.resnet_arg_scope(
-            is_training=is_training,
-            sact_kernel_size=kernel_size,
-            sact_resolution=resolution)):
+            is_training=is_training)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = resnet.resnet(
@@ -150,22 +148,10 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
           self.assertEqual(logits_out.shape, (batch_size, num_classes))
 
   def testTrain(self):
-    self._runBatch(is_training=True, kernel_size=1, resolution=0)
+    self._runBatch(is_training=True)
 
   def testTest(self):
-    self._runBatch(is_training=False, kernel_size=1, resolution=0)
-
-  def testTrainKernelSize(self):
-    self._runBatch(is_training=True, kernel_size=3, resolution=0)
-
-  def testTestKernelSize(self):
-    self._runBatch(is_training=False, kernel_size=3, resolution=0)
-
-  def testTrainResolution(self):
-    self._runBatch(is_training=True, kernel_size=1, resolution=2)
-
-  def testTestResolution(self):
-    self._runBatch(is_training=False, kernel_size=1, resolution=2)
+    self._runBatch(is_training=False)
 
   def testVisualizationBasic(self):
     batch_size = 7

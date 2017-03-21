@@ -96,12 +96,6 @@ tf.app.flags.DEFINE_bool(
     'sact', False,
     'Use spatially ACT? Active only when use_act=True.')
 
-tf.app.flags.DEFINE_integer('sact_kernel_size', 3,
-                        'Kernel size for spatially ACT.')
-
-tf.app.flags.DEFINE_integer('sact_resolution', 0,
-                        'Resolution of spatially ACT halting probability.')
-
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
 tf.app.flags.DEFINE_float('learning_rate_mult', 1.0,
@@ -142,11 +136,7 @@ def train():
       images, _, one_hot_labels, _, num_classes = data_tuple
 
       # Define the model:
-      with slim.arg_scope(
-          resnet.resnet_arg_scope(
-              is_training=True,
-              sact_kernel_size=FLAGS.sact_kernel_size,
-              sact_resolution=FLAGS.sact_resolution)):
+      with slim.arg_scope(resnet.resnet_arg_scope(is_training=True)):
         model = resnet_act_utils.split_and_int(FLAGS.model)
         logits, end_points = resnet.resnet(
             images,
@@ -220,11 +210,7 @@ def evaluate():
     images, _, one_hot_labels, num_samples, num_classes = data_tuple
 
     # Define the model:
-    with slim.arg_scope(
-        resnet.resnet_arg_scope(
-            is_training=False,
-            sact_kernel_size=FLAGS.sact_kernel_size,
-            sact_resolution=FLAGS.sact_resolution)):
+    with slim.arg_scope(resnet.resnet_arg_scope(is_training=False)):
       model = resnet_act_utils.split_and_int(FLAGS.model)
       logits, end_points = resnet.resnet(
           images,

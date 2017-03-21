@@ -145,9 +145,7 @@ def resnet(inputs,
     return net, end_points
 
 
-def resnet_arg_scope(is_training=True,
-                     sact_kernel_size=1,
-                     sact_resolution=0):
+def resnet_arg_scope(is_training=True):
   """Sets up the default arguments for the CIFAR-10 resnet model."""
   batch_norm_params = {
       'is_training':
@@ -172,9 +170,5 @@ def resnet_arg_scope(is_training=True,
           weights_initializer=slim.variance_scaling_initializer(),
           normalizer_fn=slim.batch_norm,
           normalizer_params=batch_norm_params):
-        with slim.arg_scope([slim.batch_norm], **batch_norm_params):
-          with slim.arg_scope(
-              [resnet_act_utils.get_halting_proba_conv],
-              kernel_size=sact_kernel_size,
-              resolution=sact_resolution) as arg_sc:
-            return arg_sc
+        with slim.arg_scope([slim.batch_norm], **batch_norm_params) as arg_sc:
+          return arg_sc

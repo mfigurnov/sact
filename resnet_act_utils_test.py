@@ -27,7 +27,7 @@ import resnet_act_utils
 
 class ResnetActUtilsTest(tf.test.TestCase):
 
-  def testConvActImageHeatmap(self):
+  def testSactImageHeatmap(self):
     batch = 9
     num_images = 5
     height, width, channels = 32, 32, 3

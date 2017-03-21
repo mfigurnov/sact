@@ -111,16 +111,6 @@ tf.app.flags.DEFINE_string('finetune_path', '',
                        'Path for the initial checkpoint for finetuning.')
 
 
-def get_tau_value(use_schedule=False):
-  if use_schedule:
-    global_step = tf.to_float(slim.get_or_create_global_step())
-    tau_target_step = 30000.0
-    tau = FLAGS.tau * tf.minimum(1.0, global_step / tau_target_step)
-    return tau
-  else:
-    return FLAGS.tau
-
-
 def train():
   if not tf.gfile.Exists(FLAGS.train_log_dir):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
@@ -148,9 +138,7 @@ def train():
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(logits, one_hot_labels)
         if FLAGS.use_act:
-          tau = get_tau_value()
-          tf.summary.scalar('training/tau', tau)
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
+          resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('Total Loss', total_loss)
 
@@ -223,8 +211,7 @@ def evaluate():
 
       tf.losses.softmax_cross_entropy(logits, one_hot_labels)
       if FLAGS.use_act:
-        tau = get_tau_value()
-        resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
+        resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
 
       loss = tf.losses.get_total_loss()
 

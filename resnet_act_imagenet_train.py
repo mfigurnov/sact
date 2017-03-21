@@ -99,11 +99,6 @@ tf.app.flags.DEFINE_bool(
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'Target value of tau (ponder relative cost).')
 
-tf.app.flags.DEFINE_float(
-    'num_increase_tau_epochs', 0.0,
-    'Increase ponder cost penalty from 0 to tau with a linear schedule over'
-    ' this many epochs.')
-
 tf.app.flags.DEFINE_string('finetune_path', '',
                        'Path for the initial checkpoint for finetuning.')
 
@@ -138,13 +133,7 @@ def main(_):
         tf.losses.softmax_cross_entropy(
             logits, labels, label_smoothing=0.1, weights=1.0)
         if FLAGS.use_act:
-          # Linear schedule from 0 to tau
-          global_step = tf.to_float(slim.get_or_create_global_step())
-          tau_target_step = 1.0 * examples_per_epoch / FLAGS.batch_size \
-              * FLAGS.num_increase_tau_epochs
-          tau = FLAGS.tau * tf.minimum(1.0, global_step / tau_target_step)
-          tf.summary.scalar('training/tau', tau)
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
+          resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
 
         # Setup the moving averages:

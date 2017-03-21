@@ -103,8 +103,7 @@ def resnet_v2(inputs,
               blocks,
               num_classes=None,
               global_pool=True,
-              use_act=False,
-              sact=False,
+              model_type='vanilla',
               scope=None,
               reuse=None,
               end_points=None):
@@ -125,9 +124,7 @@ def resnet_v2(inputs,
     net, end_points = resnet_act.stack_blocks(
         net,
         blocks,
-        use_act=use_act,
-        act_early_stopping=False,
-        sact=sact,
+        model_type=model_type,
         end_points=end_points)
 
     if global_pool or num_classes is not None:
@@ -165,9 +162,9 @@ def resnet_arg_scope(is_training=True, weight_decay=0.0001):
 def get_network(images,
                 model,
                 num_classes,
-                use_act,
-                sact,
+                model_type='vanilla',
                 global_pool=True,
+                base_channels=64,
                 scope=None,
                 reuse=None,
                 end_points=None):
@@ -189,14 +186,15 @@ def get_network(images,
   assert len(num_units) == num_blocks
 
   b = resnet_utils.Block
+  bc = base_channels
   blocks = [
-      b('block1', bottleneck, [(256, 64, 1)] * num_units[0]),
+      b('block1', bottleneck, [(4 * bc, bc, 1)] * num_units[0]),
       b('block2', bottleneck,
-        [(512, 128, 2)] + [(512, 128, 1)] * (num_units[1] - 1)),
+        [(8 * bc, 2 * bc, 2)] + [(8 * bc, 2 * bc, 1)] * (num_units[1] - 1)),
       b('block3', bottleneck,
-        [(1024, 256, 2)] + [(1024, 256, 1)] * (num_units[2] - 1)),
+        [(16 * bc, 4 * bc, 2)] + [(16 * bc, 4 * bc, 1)] * (num_units[2] - 1)),
       b('block4', bottleneck,
-        [(2048, 512, 2)] + [(2048, 512, 1)] * (num_units[3] - 1)),
+        [(32 * bc, 8 * bc, 2)] + [(32 * bc, 8 * bc, 1)] * (num_units[3] - 1)),
   ]
 
   logits, end_points = resnet_v2(
@@ -204,8 +202,7 @@ def get_network(images,
       blocks,
       num_classes,
       global_pool=global_pool,
-      use_act=use_act,
-      sact=sact,
+      model_type=model_type,
       scope=scope,
       reuse=reuse,
       end_points=end_points)

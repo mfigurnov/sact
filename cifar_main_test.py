@@ -36,7 +36,7 @@ import tensorflow as tf
 #     FLAGS.save_interval_secs = 0
 #     FLAGS.train_log_dir = ''
 #     FLAGS.num_residual_units = '5'
-#     FLAGS.use_act = True
+#     FLAGS.model_type = 'act'
 #     FLAGS.dataset_dir = 'testdata/cifar10'
 #     cifar_main.train()
 #
@@ -48,7 +48,7 @@ import tensorflow as tf
 #     # FLAGS.finetune_path = '../models/cifar10_5_act_false_tau_0_v2/train/model.ckpt-100000'
 #     # FLAGS.train_log_dir = ''
 #     # FLAGS.num_residitual_units = '5'
-#     # FLAGS.use_act = True
+#     # FLAGS.model_type = 'act'
 #     # FLAGS.dataset_dir = 'testdata/cifar10'
 #     # cifar_main.train()
 

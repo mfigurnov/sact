@@ -32,10 +32,10 @@ class ImagenetModelTest(tf.test.TestCase):
 
   def _runBatch(self,
                 is_training,
-                use_act,
-                model=[50]):
-    batch_size = 3
-    height, width = 224, 224
+                model_type,
+                model=[2, 2, 2, 2]):
+    batch_size = 2
+    height, width = 128, 128
     num_classes = 10
 
     with self.test_session() as sess:
@@ -43,8 +43,8 @@ class ImagenetModelTest(tf.test.TestCase):
       with slim.arg_scope(
           imagenet_model.resnet_arg_scope(is_training=is_training)):
         logits, end_points = imagenet_model.get_network(
-            images, model, num_classes, use_act, False)
-        if use_act:
+            images, model, num_classes, model_type='sact', base_channels=1)
+        if model_type == 'act':
           metrics = summary_utils.act_metric_map(end_points, False)
           metrics.update(summary_utils.flops_metric_map(end_points, False))
         else:
@@ -60,7 +60,7 @@ class ImagenetModelTest(tf.test.TestCase):
         one_hot_labels = slim.one_hot_encoding(labels, num_classes)
         tf.losses.softmax_cross_entropy(
             logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
-        if use_act:
+        if model_type == 'act':
           training_utils.add_all_ponder_costs(end_points, weights=1.0)
         total_loss = tf.losses.get_total_loss()
         optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
@@ -72,22 +72,22 @@ class ImagenetModelTest(tf.test.TestCase):
         logits_out, metrics_out = sess.run((logits, metrics))
         self.assertEqual(logits_out.shape, (batch_size, num_classes))
 
-  def testTrainNoAct(self):
-    self._runBatch(is_training=True, use_act=False)
+  def testTrainVanilla(self):
+    self._runBatch(is_training=True, model_type='vanilla')
 
   def testTrainAct(self):
-    self._runBatch(is_training=True, use_act=True)
+    self._runBatch(is_training=True, model_type='act')
 
-  def testTestNoAct(self):
-    self._runBatch(is_training=False, use_act=False)
+  def testTestVanilla(self):
+    self._runBatch(is_training=False, model_type='vanilla')
 
   def testTestAct(self):
-    self._runBatch(is_training=False, use_act=True)
+    self._runBatch(is_training=False, model_type='act')
 
-  def testTestModel(self):
-    self._runBatch(is_training=False, use_act=False, model=[3, 4, 6, 3])
+  def testTestResNet50Model(self):
+    self._runBatch(is_training=False, model_type='vanilla', model=[50])
 
-  def testFlopsNoAct(self):
+  def testFlopsVanilla(self):
     batch_size = 3
     height, width = 224, 224
     num_classes = 1001
@@ -96,7 +96,7 @@ class ImagenetModelTest(tf.test.TestCase):
       images = tf.random_uniform((batch_size, height, width, 3))
       with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=False)):
         _, end_points = imagenet_model.get_network(
-            images, [101], num_classes, False, False)
+            images, [101], num_classes, 'vanilla')
         flops = sess.run(end_points['flops'])
         # TF graph_metrics value: 15614055401 (0.1% difference)
         expected_flops = 15602814976
@@ -106,8 +106,8 @@ class ImagenetModelTest(tf.test.TestCase):
 class ResNetSactImagenetModelTest(tf.test.TestCase):
 
   def _runBatch(self, is_training):
-    batch_size = 3
-    height, width = 224, 224
+    batch_size = 2
+    height, width = 128, 128
     num_classes = 10
 
     with self.test_session() as sess:
@@ -115,7 +115,8 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
       with slim.arg_scope(
           imagenet_model.resnet_arg_scope(is_training=is_training)):
         logits, end_points = imagenet_model.get_network(
-            images, [50], num_classes, True, True)
+            images, [2, 2, 2, 2], num_classes, model_type='sact',
+            base_channels=1)
         metrics = summary_utils.act_metric_map(end_points, False)
         metrics.update(summary_utils.flops_metric_map(end_points, False))
 
@@ -147,8 +148,8 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
     self._runBatch(is_training=False)
 
   def testVisualizationBasic(self):
-    batch_size = 3
-    height, width = 224, 224
+    batch_size = 5
+    height, width = 128, 128
     num_classes = 10
     is_training = False
     num_images = 3
@@ -158,7 +159,8 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
       images = tf.random_uniform((batch_size, height, width, 3))
       with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=is_training)):
         logits, end_points = imagenet_model.get_network(
-            images, [50], num_classes, True, True)
+            images, [2, 2, 2, 2], num_classes, model_type='sact',
+            base_channels=1)
 
         vis_ponder = summary_utils.sact_image_heatmap(
             end_points,

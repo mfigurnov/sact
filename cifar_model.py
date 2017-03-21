@@ -95,8 +95,8 @@ def residual(inputs,
 def resnet(inputs,
            model,
            num_classes,
-           use_act=False,
-           sact=False,
+           model_type='vanilla',
+           base_channels=16,
            scope='resnet_residual'):
   """Builds a CIFAR-10 resnet model."""
   num_blocks = 3
@@ -106,13 +106,14 @@ def resnet(inputs,
   assert len(num_units) == num_blocks
 
   b = resnet_utils.Block
+  bc = base_channels
   blocks = [
     b('block_1', residual,
-      [(16, 1, True)] + [(16, 1, False)] * (num_units[0] - 1)),
+      [(bc, 1, True)] + [(bc, 1, False)] * (num_units[0] - 1)),
     b('block_2', residual,
-      [(32, 2, False)] + [(32, 1, False)] * (num_units[1] - 1)),
+      [(2 * bc, 2, False)] + [(2 * bc, 1, False)] * (num_units[1] - 1)),
     b('block_3', residual,
-      [(64, 2, False)] + [(64, 1, False)] * (num_units[2] - 1))
+      [(4 * bc, 2, False)] + [(4 * bc, 1, False)] * (num_units[2] - 1))
   ]
 
   with tf.variable_scope(scope, [inputs]):
@@ -120,14 +121,12 @@ def resnet(inputs,
     end_points['flops'] = 0
     net = inputs
     net, current_flops = flopsometer.conv2d(
-        net, 16, 3, activation_fn=None, normalizer_fn=None)
+        net, bc, 3, activation_fn=None, normalizer_fn=None)
     end_points['flops'] += current_flops
     net, end_points = resnet_act.stack_blocks(
         net,
         blocks,
-        use_act=use_act,
-        act_early_stopping=True,
-        sact=sact,
+        model_type=model_type,
         end_points=end_points)
     net = tf.reduce_mean(net, [1, 2], keep_dims=True)
     net = slim.batch_norm(net)

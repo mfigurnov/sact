@@ -93,11 +93,11 @@ tf.app.flags.DEFINE_string(
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
-tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
-
-tf.app.flags.DEFINE_bool(
-    'sact', False,
-    'Use spatially ACT? Active only when use_act=True.')
+tf.app.flags.DEFINE_string(
+    'model_type', 'vanilla',
+    'Options: vanilla (basic ResNet model), act (Adaptive Computation Time), '
+    'act_early_stopping (act implementation which actually saves time), '
+    'sact (Spatially Adaptive Computation Time)')
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'Target value of tau (ponder relative cost).')
 
@@ -127,13 +127,13 @@ def main(_):
             images,
             model,
             num_classes,
-            use_act=FLAGS.use_act,
+            model_type=FLAGS.model_type,
             sact=FLAGS.sact)
 
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(
             logits, labels, label_smoothing=0.1, weights=1.0)
-        if FLAGS.use_act:
+        if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
 
@@ -189,12 +189,12 @@ def main(_):
         tf.summary.scalar('training/Learning Rate', learning_rate)
 
         metric_map = {}  # summary_utils.flops_metric_map(end_points, False)
-        if FLAGS.use_act:
+        if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           metric_map.update(summary_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
-        if FLAGS.use_act and FLAGS.sact:
+        if FLAGS.model_type == 'sact':
           summary_utils.add_heatmaps_image_summary(end_points, border=10)
 
         if FLAGS.sync_replicas:

@@ -92,11 +92,11 @@ tf.app.flags.DEFINE_string('split_name', 'test', """Either 'train' or 'test'."""
 tf.app.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?')
 
 # Model settings
-tf.app.flags.DEFINE_bool('use_act', False, 'Use ACT?')
-
-tf.app.flags.DEFINE_bool(
-    'sact', False,
-    'Use spatially ACT? Active only when use_act=True.')
+tf.app.flags.DEFINE_string(
+    'model_type', 'vanilla',
+    'Options: vanilla (basic ResNet model), act (Adaptive Computation Time), '
+    'act_early_stopping (act implementation which actually saves time), '
+    'sact (Spatially Adaptive Computation Time)')
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
@@ -131,23 +131,22 @@ def train():
             images,
             model=model,
             num_classes=num_classes,
-            use_act=FLAGS.use_act,
-            sact=FLAGS.sact)
+            model_type=FLAGS.model_type)
 
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(logits, one_hot_labels)
-        if FLAGS.use_act:
+        if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('Total Loss', total_loss)
 
         metric_map = {}  # summary_utils.flops_metric_map(end_points, False)
-        if FLAGS.use_act:
+        if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           metric_map.update(summary_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
-        if FLAGS.use_act and FLAGS.sact:
+        if FLAGS.model_type == 'sact':
           summary_utils.add_heatmaps_image_summary(end_points)
 
         init_fn = training_utils.finetuning_init_fn(FLAGS.finetune_path)
@@ -199,13 +198,12 @@ def evaluate():
           images,
           model=model,
           num_classes=num_classes,
-          use_act=FLAGS.use_act,
-          sact=FLAGS.sact)
+          model_type=FLAGS.model_type)
 
       predictions = tf.argmax(logits, 1)
 
       tf.losses.softmax_cross_entropy(logits, one_hot_labels)
-      if FLAGS.use_act:
+      if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
         training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
 
       loss = tf.losses.get_total_loss()
@@ -217,7 +215,7 @@ def evaluate():
           'eval/Mean Loss': slim.metrics.streaming_mean(loss),
       }
       metric_map.update(summary_utils.flops_metric_map(end_points, True))
-      if FLAGS.use_act:
+      if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
         metric_map.update(summary_utils.act_metric_map(end_points, True))
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
           metric_map)
@@ -227,7 +225,7 @@ def evaluate():
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
-      if FLAGS.use_act and FLAGS.sact:
+      if FLAGS.model_type == 'sact':
         summary_utils.add_heatmaps_image_summary(end_points)
 
       # This ensures that we make a single pass over all of the data.

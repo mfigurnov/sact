@@ -93,11 +93,11 @@ def get_halting_proba_conv(outputs, residual_mask=None):
 
 
 def unit_act(block,
-              inputs,
-              unit_idx,
-              skip_halting_proba=False,
-              sact=False,
-              residual_mask=None):
+             inputs,
+             unit_idx,
+             skip_halting_proba=False,
+             sact=False,
+             residual_mask=None):
   with tf.variable_scope('unit_%d' % (unit_idx + 1), [inputs]):
     outputs, flops = block.unit_fn(
         inputs, *block.args[unit_idx], residual_mask=residual_mask)
@@ -115,8 +115,7 @@ def unit_act(block,
     return outputs, halting_proba, flops
 
 
-def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
-                 sact=False, end_points=None):
+def stack_blocks(net, blocks, model_type, end_points=None):
   """Utility function for assembling SACT models consisting of 'blocks.'"""
   if end_points is None:
     end_points = {}
@@ -124,20 +123,19 @@ def stack_blocks(net, blocks, use_act=False, act_early_stopping=False,
   end_points['block_scopes'] = [block.scope for block in blocks]
   end_points['block_num_units'] = [len(block.args) for block in blocks]
 
-  for block in blocks:
-    if use_act:
-      if sact:
-        act_func = act.spatially_adaptive_computation_time
-      else:
-        if act_early_stopping:
-          act_func = act.adaptive_computation_early_stopping
-        else:
-          act_func = act.adaptive_computation_time_wrapper
+  assert model_type in ('vanilla', 'act', 'act_early_stopping', 'sact')
+  model_type_to_func = {
+    'act': act.adaptive_computation_time_wrapper,
+    'act_early_stopping': act.adaptive_computation_early_stopping,
+    'sact': act.spatially_adaptive_computation_time,
+  }
+  act_func = model_type_to_func.get(model_type, None)
 
+  for block in blocks:
+    if act_func:
       (ponder_cost, num_units, flops, halting_distribution, net) = act_func(
           net,
-          partial(
-              unit_act, block, sact=sact),
+          partial(unit_act, block, sact=(model_type == 'sact')),
           len(block.args),
           scope=block.scope)
 

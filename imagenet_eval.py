@@ -63,11 +63,11 @@ tf.app.flags.DEFINE_string(
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
     ' in each block (e.g. 3_4_23_3).')
 
-tf.app.flags.DEFINE_bool('use_act', True, 'Use ACT?')
-
-tf.app.flags.DEFINE_bool(
-    'sact', False,
-    'Use spatially ACT? Active only when use_act=True.')
+tf.app.flags.DEFINE_string(
+    'model_type', 'vanilla',
+    'Options: vanilla (basic ResNet model), act (Adaptive Computation Time), '
+    'act_early_stopping (act implementation which actually saves time), '
+    'sact (Spatially Adaptive Computation Time)')
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
@@ -93,8 +93,7 @@ def main(_):
           images,
           model,
           num_classes,
-          use_act=FLAGS.use_act,
-          sact=FLAGS.sact)
+          model_type=FLAGS.model_type)
 
       # For eval, explicitly add moving_mean and moving_variance variables to
       # the MOVING_AVERAGE_VARIABLES collection.

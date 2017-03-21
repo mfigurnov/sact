@@ -30,8 +30,8 @@ import training_utils
 
 class CifarModelTest(tf.test.TestCase):
 
-  def _runBatch(self, is_training, use_act, model=[5]):
-    batch_size = 3
+  def _runBatch(self, is_training, model_type, model=[2]):
+    batch_size = 2
     height, width = 32, 32
     num_classes = 10
 
@@ -43,9 +43,9 @@ class CifarModelTest(tf.test.TestCase):
             images,
             model=model,
             num_classes=num_classes,
-            use_act=use_act,
-            sact=False)
-        if use_act:
+            model_type=model_type,
+            base_channels=1)
+        if model_type == 'act':
           metrics = summary_utils.act_metric_map(end_points, False)
           metrics.update(summary_utils.flops_metric_map(end_points, False))
         else:
@@ -60,7 +60,7 @@ class CifarModelTest(tf.test.TestCase):
           one_hot_labels = slim.one_hot_encoding(labels, num_classes)
           tf.losses.softmax_cross_entropy(
               logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
-          if use_act:
+          if model_type == 'act':
             training_utils.add_all_ponder_costs(end_points, weights=1.0)
           total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
@@ -72,23 +72,23 @@ class CifarModelTest(tf.test.TestCase):
           logits_out, metrics_out = sess.run((logits, metrics))
           self.assertEqual(logits_out.shape, (batch_size, num_classes))
 
-  def testTrainNoAct(self):
-    self._runBatch(is_training=True, use_act=False)
+  def testTrainVanilla(self):
+    self._runBatch(is_training=True, model_type='vanilla')
 
   def testTrainAct(self):
-    self._runBatch(is_training=True, use_act=True)
+    self._runBatch(is_training=True, model_type='act')
 
-  def testTestNoAct(self):
-    self._runBatch(is_training=False, use_act=False)
+  def testTestVanilla(self):
+    self._runBatch(is_training=False, model_type='vanilla')
 
-  def testTestNoActResidualUnits(self):
+  def testTestVanillaResidualUnits(self):
     self._runBatch(
-        is_training=False, use_act=False, model=[1, 2, 3])
+        is_training=False, model_type='vanilla', model=[1, 2, 3])
 
   def testTestAct(self):
-    self._runBatch(is_training=False, use_act=True)
+    self._runBatch(is_training=False, model_type='act')
 
-  def testFlopsNoAct(self):
+  def testFlopsVanilla(self):
     batch_size = 3
     height, width = 32, 32
     num_classes = 10
@@ -100,8 +100,7 @@ class CifarModelTest(tf.test.TestCase):
             images,
             model=[18],
             num_classes=num_classes,
-            use_act=False,
-            sact=False)
+            model_type='vanilla')
         flops = sess.run(end_points['flops'])
         # TF graph_metrics value: 506307850 (0.1% difference)
         expected_flops = 505775360
@@ -111,7 +110,7 @@ class CifarModelTest(tf.test.TestCase):
 class ResNetSactCifarModelTest(tf.test.TestCase):
 
   def _runBatch(self, is_training):
-    batch_size = 3
+    batch_size = 2
     height, width = 32, 32
     num_classes = 10
 
@@ -120,10 +119,10 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = cifar_model.resnet(
             images,
-            model=[5] * 3,
+            model=[2],
             num_classes=num_classes,
-            use_act=True,
-            sact=True)
+            model_type='sact',
+            base_channels=1)
         metrics = summary_utils.act_metric_map(end_points, False)
         metrics.update(summary_utils.flops_metric_map(end_points, False))
 
@@ -154,11 +153,11 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
     self._runBatch(is_training=False)
 
   def testVisualizationBasic(self):
-    batch_size = 7
+    batch_size = 3
     height, width = 32, 32
     num_classes = 10
     is_training = False
-    num_images = 3
+    num_images = 2
     border = 5
 
     with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=is_training)):
@@ -166,10 +165,10 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
         images = tf.random_uniform((batch_size, height, width, 3))
         logits, end_points = cifar_model.resnet(
             images,
-            model=[5] * 3,
+            model=[2],
             num_classes=num_classes,
-            use_act=True,
-            sact=True)
+            model_type='sact',
+            base_channels=1)
 
         vis_ponder = summary_utils.sact_image_heatmap(
             end_points,

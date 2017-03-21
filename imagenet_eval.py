@@ -51,6 +51,10 @@ tf.app.flags.DEFINE_integer('eval_interval_secs', 600,
 tf.app.flags.DEFINE_integer('num_examples', 50000,
                         'The number of examples to evaluate')
 
+tf.app.flags.DEFINE_integer(
+    'batch_size', 32,
+    'The number of examples to evaluate per evaluation iteration.')
+
 tf.app.flags.DEFINE_string(
     'split_name', 'validation',
     'The name of the train/test split, either \'train\' or \'validation\'.')
@@ -120,7 +124,7 @@ def main(_):
                                                  labels, 5),
       }
       metric_map.update(summary_utils.flops_metric_map(end_points, True))
-      if FLAGS.use_act:
+      if FLAGS.model_type in ['act', 'act_early_stopping', 'sact']:
         metric_map.update(summary_utils.act_metric_map(end_points, True))
 
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
@@ -131,7 +135,7 @@ def main(_):
         summ = tf.Print(summ, [value], name)
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
-      if FLAGS.use_act and FLAGS.sact:
+      if FLAGS.model_type == 'sact':
         summary_utils.add_heatmaps_image_summary(end_points, border=10)
 
       # This ensures that we make a single pass over all of the data.

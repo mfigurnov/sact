@@ -257,7 +257,7 @@ def variables_to_str(variables):
 
 
 def get_finetuning_settings(finetune_path, lr_coeff=1.0):
-  """Sets up fine-tuning of an SACT model."""
+  """Sets up fine-tuning of a SACT model."""
   if not finetune_path:
     return (None, None)
 
@@ -348,7 +348,7 @@ def add_heatmaps_image_summary(end_points, num_images=3, alpha=0.75, border=5):
 
 
 def sact_map(end_points, metric_name):
-  """Generates a headmap of the ponder cost for visualization."""
+  """Generates a heatmap of the ponder cost for visualization."""
   assert metric_name in ('ponder_cost', 'num_units')
 
   inputs = end_points['inputs']

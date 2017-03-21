@@ -132,7 +132,7 @@ def main(_):
 
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(
-            logits, labels, label_smoothing=0.1, weights=1.0)
+            onehot_labels=labels, logits=logits, label_smoothing=0.1, weights=1.0)
         if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()

@@ -133,7 +133,8 @@ def train():
             model_type=FLAGS.model_type)
 
         # Specify the loss function:
-        tf.losses.softmax_cross_entropy(logits, one_hot_labels)
+        tf.losses.softmax_cross_entropy(
+            onehot_labels=one_hot_labels, logits=logits)
         if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
           training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
@@ -205,7 +206,8 @@ def evaluate():
 
       predictions = tf.argmax(logits, 1)
 
-      tf.losses.softmax_cross_entropy(logits, one_hot_labels)
+      tf.losses.softmax_cross_entropy(
+          onehot_labels=one_hot_labels, logits=logits)
       if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
         training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
 

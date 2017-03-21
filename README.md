@@ -85,7 +85,7 @@ bazel-bin/resnet_act_cifar_main --use_act=True --sact=True --tau=0.01 --checkpoi
 To evaluate a pretrained ACT-Resnet model:
 
 ``` bash
-bazel-bin/resnet_act_cifar_main --use_act --tau=0 --checkpoint_dir='models/cifar10_resnet_18_act_0.001/train' --mode=eval --eval_dir='/tmp' --evaluate_once
+python cifar_main.py --model=18 --model_type=act --tau=0.001 --checkpoint_dir='models/cifar10_resnet_18_act_0.001/train' --mode=eval --eval_dir='/tmp' --evaluate_once
 ```
 
 This model is expected to achieve an accuracy of 0.9386, with the output looking

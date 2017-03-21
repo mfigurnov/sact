@@ -235,27 +235,21 @@ def variables_to_str(variables):
   return ', '.join([var.op.name for var in variables])
 
 
-def get_finetuning_settings(finetune_path, lr_coeff=1.0):
+def finetuning_init_fn(finetune_path):
   """Sets up fine-tuning of a SACT model."""
   if not finetune_path:
-    return (None, None)
+    return None
 
   tf.logging.warning('Finetuning from {}'.format(finetune_path))
   variables = slim.get_model_variables()
   variables_to_restore = [
       var for var in variables if '/halting_proba/' not in var.op.name
   ]
-  variables_to_train_fast = [
-      var for var in variables if '/halting_proba/' in var.op.name
-  ]
   tf.logging.info('Restoring variables: {}'.format(
       variables_to_str(variables_to_restore)))
-  tf.logging.info('Training with {}x LR: {}'.format(
-      lr_coeff, variables_to_str(variables_to_train_fast)))
   init_fn = slim.assign_from_checkpoint_fn(finetune_path, variables_to_restore)
-  gradient_multipliers = {var: lr_coeff for var in variables_to_train_fast}
 
-  return (init_fn, gradient_multipliers)
+  return init_fn
 
 
 def sact_image_heatmap(end_points,

@@ -176,14 +176,12 @@ def main(_):
               replica_id=replica_id,
               total_num_replicas=FLAGS.worker_replicas)
 
-        init_fn, gradient_multipliers = \
-            resnet_act_utils.get_finetuning_settings(FLAGS.finetune_path)
+        init_fn = resnet_act_utils.finetuning_init_fn(FLAGS.finetune_path)
 
         train_tensor = slim.learning.create_train_op(
             total_loss,
             optimizer=opt,
-            update_ops=tf.get_collection(tf.GraphKeys.UPDATE_OPS),
-            gradient_multipliers=gradient_multipliers)
+            update_ops=tf.get_collection(tf.GraphKeys.UPDATE_OPS))
 
         # Summaries:
         tf.summary.scalar('losses/Total Loss', total_loss)

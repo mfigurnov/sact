@@ -151,8 +151,7 @@ def train():
         if FLAGS.use_act and FLAGS.sact:
           resnet_act_utils.add_heatmaps_image_summary(end_points)
 
-        init_fn, _ = resnet_act_utils.get_finetuning_settings(
-            FLAGS.finetune_path)
+        init_fn = resnet_act_utils.finetuning_init_fn(FLAGS.finetune_path)
 
         # Specify the optimization scheme:
         global_step = slim.get_or_create_global_step()
@@ -170,8 +169,7 @@ def train():
         optimizer = tf.train.MomentumOptimizer(learning_rate, 0.9)
 
         # Set up training.
-        train_op = slim.learning.create_train_op(
-            total_loss, optimizer, gradient_multipliers=None)
+        train_op = slim.learning.create_train_op(total_loss, optimizer)
 
         if FLAGS.train_log_dir:
           logdir = FLAGS.train_log_dir

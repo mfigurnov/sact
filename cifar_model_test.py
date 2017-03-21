@@ -23,8 +23,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-import utils
 import cifar_model
+import summary_utils
+import training_utils
 
 
 class CifarModelTest(tf.test.TestCase):
@@ -45,8 +46,8 @@ class CifarModelTest(tf.test.TestCase):
             use_act=use_act,
             sact=False)
         if use_act:
-          metrics = utils.act_metric_map(end_points, False)
-          metrics.update(utils.flops_metric_map(end_points, False))
+          metrics = summary_utils.act_metric_map(end_points, False)
+          metrics.update(summary_utils.flops_metric_map(end_points, False))
         else:
           metrics = {}
 
@@ -60,7 +61,7 @@ class CifarModelTest(tf.test.TestCase):
           tf.losses.softmax_cross_entropy(
               logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
           if use_act:
-            utils.add_all_ponder_costs(end_points, weights=1.0)
+            training_utils.add_all_ponder_costs(end_points, weights=1.0)
           total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -123,8 +124,8 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
             num_classes=num_classes,
             use_act=True,
             sact=True)
-        metrics = utils.act_metric_map(end_points, False)
-        metrics.update(utils.flops_metric_map(end_points, False))
+        metrics = summary_utils.act_metric_map(end_points, False)
+        metrics.update(summary_utils.flops_metric_map(end_points, False))
 
         # Check that there are no global updates as they break tf.cond.
         self.assertEqual(tf.get_collection(tf.GraphKeys.UPDATE_OPS), [])
@@ -135,7 +136,7 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
           one_hot_labels = slim.one_hot_encoding(labels, num_classes)
           tf.losses.softmax_cross_entropy(
               logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
-          utils.add_all_ponder_costs(end_points, weights=1.0)
+          training_utils.add_all_ponder_costs(end_points, weights=1.0)
           total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -170,13 +171,13 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
             use_act=True,
             sact=True)
 
-        vis_ponder = utils.sact_image_heatmap(
+        vis_ponder = summary_utils.sact_image_heatmap(
             end_points,
             'ponder_cost',
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_units = utils.sact_image_heatmap(
+        vis_units = summary_utils.sact_image_heatmap(
             end_points,
             'num_units',
             num_images=num_images,

@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Tests for utils."""
+"""Tests for summary_utils."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -22,10 +22,10 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-import utils
+import summary_utils
 
 
-class UtilsTest(tf.test.TestCase):
+class SummaryUtilsTest(tf.test.TestCase):
 
   def testSactImageHeatmap(self):
     batch = 9
@@ -41,7 +41,7 @@ class UtilsTest(tf.test.TestCase):
         'block_1/ponder_cost': 5 * tf.ones([batch, height / 2, width / 2]),
     }
 
-    heatmap = utils.sact_image_heatmap(
+    heatmap = summary_utils.sact_image_heatmap(
         end_points,
         'ponder_cost',
         num_images=num_images,

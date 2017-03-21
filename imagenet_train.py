@@ -27,6 +27,8 @@ from tensorflow.contrib import slim
 
 import imagenet_data_provider
 import imagenet_model
+import summary_utils
+import training_utils
 import utils
 
 FLAGS = tf.app.flags.FLAGS
@@ -132,7 +134,7 @@ def main(_):
         tf.losses.softmax_cross_entropy(
             logits, labels, label_smoothing=0.1, weights=1.0)
         if FLAGS.use_act:
-          utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+          training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
 
         # Setup the moving averages:
@@ -175,7 +177,7 @@ def main(_):
               replica_id=replica_id,
               total_num_replicas=FLAGS.worker_replicas)
 
-        init_fn = utils.finetuning_init_fn(FLAGS.finetune_path)
+        init_fn = training_utils.finetuning_init_fn(FLAGS.finetune_path)
 
         train_tensor = slim.learning.create_train_op(
             total_loss,
@@ -186,14 +188,14 @@ def main(_):
         tf.summary.scalar('losses/Total Loss', total_loss)
         tf.summary.scalar('training/Learning Rate', learning_rate)
 
-        metric_map = {}  # utils.flops_metric_map(end_points, False)
+        metric_map = {}  # summary_utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
-          metric_map.update(utils.act_metric_map(end_points, False))
+          metric_map.update(summary_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.sact:
-          utils.add_heatmaps_image_summary(end_points, border=10)
+          summary_utils.add_heatmaps_image_summary(end_points, border=10)
 
         if FLAGS.sync_replicas:
           sync_optimizer = opt

@@ -29,6 +29,7 @@ from tensorflow.contrib import slim
 
 import imagenet_data_provider
 import imagenet_model
+import summary_utils
 import utils
 
 FLAGS = tf.app.flags.FLAGS
@@ -81,9 +82,9 @@ def main(_):
           use_act=FLAGS.use_act,
           sact=FLAGS.sact)
 
-      utils.export_to_h5(FLAGS.checkpoint_path, FLAGS.export_path,
-                                    images, end_points, FLAGS.num_examples,
-                                    FLAGS.batch_size, FLAGS.sact)
+      summary_utils.export_to_h5(FLAGS.checkpoint_path, FLAGS.export_path,
+                                 images, end_points, FLAGS.num_examples,
+                                 FLAGS.batch_size, FLAGS.sact)
 
 
 if __name__ == '__main__':

@@ -29,6 +29,7 @@ from tensorflow.contrib import slim
 
 import imagenet_data_provider
 import imagenet_model
+import summary_utils
 import utils
 
 FLAGS = tf.app.flags.FLAGS
@@ -87,7 +88,7 @@ def main(_):
 
     # Define the model:
     with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=False)):
-      model = utils.parse_num_layers(FLAGS.model)
+      model = utils.split_and_int(FLAGS.model)
       logits, end_points = imagenet_model.get_network(
           images,
           model,
@@ -119,9 +120,9 @@ def main(_):
               slim.metrics.streaming_recall_at_k(end_points['predictions'],
                                                  labels, 5),
       }
-      metric_map.update(utils.flops_metric_map(end_points, True))
+      metric_map.update(summary_utils.flops_metric_map(end_points, True))
       if FLAGS.use_act:
-        metric_map.update(utils.act_metric_map(end_points, True))
+        metric_map.update(summary_utils.act_metric_map(end_points, True))
 
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
           metric_map)
@@ -132,7 +133,7 @@ def main(_):
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
       if FLAGS.use_act and FLAGS.sact:
-        utils.add_heatmaps_image_summary(end_points, border=10)
+        summary_utils.add_heatmaps_image_summary(end_points, border=10)
 
       # This ensures that we make a single pass over all of the data.
       num_batches = math.ceil(FLAGS.num_examples / float(FLAGS.batch_size))

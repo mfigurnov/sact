@@ -26,7 +26,7 @@ from tensorflow.contrib.slim.nets import resnet_utils
 
 import act
 import flopsometer
-import utils
+import resnet_act
 
 
 @slim.add_arg_scope
@@ -123,7 +123,7 @@ def resnet_v2(inputs,
       end_points['flops'] += current_flops
     net = slim.max_pool2d(net, [3, 3], stride=2, scope='pool1')
     # Early stopping is broken in distributed training.
-    net, end_points = utils.stack_blocks(
+    net, end_points = resnet_act.stack_blocks(
         net,
         blocks,
         use_act=use_act,

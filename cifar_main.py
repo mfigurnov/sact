@@ -26,6 +26,8 @@ from tensorflow.contrib import slim
 
 import cifar_data_provider
 import cifar_model
+import summary_utils
+import training_utils
 import utils
 
 
@@ -135,20 +137,20 @@ def train():
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(logits, one_hot_labels)
         if FLAGS.use_act:
-          utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+          training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('Total Loss', total_loss)
 
-        metric_map = {}  # utils.flops_metric_map(end_points, False)
+        metric_map = {}  # summary_utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
-          metric_map.update(utils.act_metric_map(end_points, False))
+          metric_map.update(summary_utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.sact:
-          utils.add_heatmaps_image_summary(end_points)
+          summary_utils.add_heatmaps_image_summary(end_points)
 
-        init_fn = utils.finetuning_init_fn(FLAGS.finetune_path)
+        init_fn = training_utils.finetuning_init_fn(FLAGS.finetune_path)
 
         # Specify the optimization scheme:
         global_step = slim.get_or_create_global_step()
@@ -204,7 +206,7 @@ def evaluate():
 
       tf.losses.softmax_cross_entropy(logits, one_hot_labels)
       if FLAGS.use_act:
-        utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+        training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
 
       loss = tf.losses.get_total_loss()
 
@@ -214,9 +216,9 @@ def evaluate():
           'eval/Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
           'eval/Mean Loss': slim.metrics.streaming_mean(loss),
       }
-      metric_map.update(utils.flops_metric_map(end_points, True))
+      metric_map.update(summary_utils.flops_metric_map(end_points, True))
       if FLAGS.use_act:
-        metric_map.update(utils.act_metric_map(end_points, True))
+        metric_map.update(summary_utils.act_metric_map(end_points, True))
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
           metric_map)
 
@@ -226,7 +228,7 @@ def evaluate():
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
       if FLAGS.use_act and FLAGS.sact:
-        utils.add_heatmaps_image_summary(end_points)
+        summary_utils.add_heatmaps_image_summary(end_points)
 
       # This ensures that we make a single pass over all of the data.
       num_batches = math.ceil(num_samples / float(FLAGS.eval_batch_size))

@@ -225,11 +225,10 @@ def evaluate():
             is_training=False,
             sact_kernel_size=FLAGS.sact_kernel_size,
             sact_resolution=FLAGS.sact_resolution)):
-      num_residual_units = resnet_act_utils.parse_num_layers(
-          FLAGS.num_residual_units)
+      model = resnet_act_utils.split_and_int(FLAGS.model)
       logits, end_points = resnet.resnet(
           images,
-          num_residual_units=num_residual_units,
+          model=model,
           num_classes=num_classes,
           use_act=FLAGS.use_act,
           sact=FLAGS.sact)
@@ -239,7 +238,7 @@ def evaluate():
       tf.losses.softmax_cross_entropy(logits, one_hot_labels)
       if FLAGS.use_act:
         tau = get_tau_value()
-        resnet_act_utils.add_all_ponder_costs(end_points, weight=tau)
+        resnet_act_utils.add_all_ponder_costs(end_points, weights=tau)
 
       loss = tf.losses.get_total_loss()
 
@@ -273,6 +272,7 @@ def evaluate():
       else:
         eval_function = slim.evaluation.evaluate_once
         checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
+        assert checkpoint_path is not None
         eval_kwargs = {}
 
       eval_function(

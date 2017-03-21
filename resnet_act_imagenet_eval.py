@@ -154,6 +154,7 @@ def main(_):
       else:
         eval_function = slim.evaluation.evaluate_once
         checkpoint_path = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
+        assert checkpoint_path is not None
         kwargs = {}
 
       eval_function(

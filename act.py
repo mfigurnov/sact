@@ -125,8 +125,8 @@ def adaptive_computation_time_wrapper(inputs, unit, max_units,
 
   Wraps `adaptive_computation_time` with an interface compatible with
   `adaptive_computation_early_stopping`. Should do the same thing as
-  `adaptive_computation_early_stopping` but does not use tf.cond and therefore
-  works with parameter servers and the GPU.
+  `adaptive_computation_early_stopping` but should work in cases when tf.cond
+  fails.
   """
   states, halting_probas, all_flops = run_units(inputs, unit,
                                                     max_units, scope)

@@ -145,18 +145,13 @@ def resnet(inputs,
 def resnet_arg_scope(is_training=True):
   """Sets up the default arguments for the CIFAR-10 resnet model."""
   batch_norm_params = {
-      'is_training':
-          is_training,
-      'decay':
-          0.9,
-      'epsilon':
-          0.001,
-      'scale':
-          True,
+      'is_training': is_training,
+      'decay': 0.9,
+      'epsilon': 0.001,
+      'scale': True,
       # This forces batch_norm to compute the moving averages in-place
       # instead of using a global collection which does not work with tf.cond.
-      'updates_collections':
-          None,
+      # 'updates_collections': None,
   }
 
   with slim.arg_scope([slim.conv2d, slim.batch_norm], activation_fn=lrelu):

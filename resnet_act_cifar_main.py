@@ -98,9 +98,6 @@ tf.app.flags.DEFINE_bool(
 
 tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).')
 
-tf.app.flags.DEFINE_float('learning_rate_mult', 1.0,
-                      'Multiplier for learning rate.')
-
 tf.app.flags.DEFINE_string(
   'model',
   '18',
@@ -161,8 +158,6 @@ def train():
         boundaries = [60000, 75000, 90000]
         boundaries = [tf.constant(x, dtype=tf.int64) for x in boundaries]
         values = [0.1, 0.01, 0.001, 0.0001]
-        if FLAGS.learning_rate_mult != 1.0:
-          values = [x * FLAGS.learning_rate_mult for x in values]
         learning_rate = tf.train.piecewise_constant(global_step, boundaries,
                                                     values)
         tf.summary.scalar('Learning Rate', learning_rate)

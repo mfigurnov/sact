@@ -31,7 +31,8 @@ from external import datasets_imagenet
 
 
 def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
-                 num_readers=1, num_preprocessing_threads=1, image_size=224):
+                 num_readers=1, num_preprocessing_threads=1, image_size=224,
+                 legacy_model=True):
   """Provides batches of Imagenet data.
 
   Applies the processing in
@@ -74,7 +75,13 @@ def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
     bbox = tf.expand_dims(bbox, 0)
 
     image = inception_preprocessing.preprocess_image(
-      image, image_size, image_size, is_training, bbox, fast_mode=True)
+      image, image_size, image_size, is_training, bbox, fast_mode=False)
+
+    if legacy_model:
+      # The original code had a bug where the normalization was applied two times,
+      # first from [0, 1] to [-1, 1], and then from [-1, 1] to [-3, 1].
+      image = tf.subtract(image, 0.5)
+      image = tf.multiply(image, 2.0)
 
     images, labels = tf.train.batch(
         [image, label],

@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Tests for resnet_act_imagenet_model_train."""
+"""Tests for imagenet_model_train."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -21,13 +21,13 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-# import resnet_act_imagenet_train
+# import imagenet_train
 #
 #
 # FLAGS = tf.app.flags.FLAGS
 #
 #
-# class ResNetActImagenetTest(tf.test.TestCase):
+# class ImagenetTest(tf.test.TestCase):
 #
 #   def testTrain(self):
 #     FLAGS.batch_size = 4
@@ -37,7 +37,7 @@ import tensorflow as tf
 #     FLAGS.num_layers = '50'
 #     FLAGS.use_act = True
 #     FLAGS.dataset_dir = 'testdata/imagenet'
-#     resnet_act_imagenet_train.main(None)
+#     imagenet_train.main(None)
 
 
 if __name__ == '__main__':

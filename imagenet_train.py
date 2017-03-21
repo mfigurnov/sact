@@ -26,8 +26,8 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 import imagenet_data_provider
-import resnet_act_imagenet_model
-import resnet_act_utils
+import imagenet_model
+import utils
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -119,10 +119,9 @@ def main(_):
       images, labels, examples_per_epoch, num_classes = data_tuple
 
       # Define the model:
-      with slim.arg_scope(
-          resnet_act_imagenet_model.resnet_arg_scope(is_training=True)):
-        model = resnet_act_utils.split_and_int(FLAGS.model)
-        logits, end_points = resnet_act_imagenet_model.get_network(
+      with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=True)):
+        model = utils.split_and_int(FLAGS.model)
+        logits, end_points = imagenet_model.get_network(
             images,
             model,
             num_classes,
@@ -133,7 +132,7 @@ def main(_):
         tf.losses.softmax_cross_entropy(
             logits, labels, label_smoothing=0.1, weights=1.0)
         if FLAGS.use_act:
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+          utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
 
         # Setup the moving averages:
@@ -176,7 +175,7 @@ def main(_):
               replica_id=replica_id,
               total_num_replicas=FLAGS.worker_replicas)
 
-        init_fn = resnet_act_utils.finetuning_init_fn(FLAGS.finetune_path)
+        init_fn = utils.finetuning_init_fn(FLAGS.finetune_path)
 
         train_tensor = slim.learning.create_train_op(
             total_loss,
@@ -187,14 +186,14 @@ def main(_):
         tf.summary.scalar('losses/Total Loss', total_loss)
         tf.summary.scalar('training/Learning Rate', learning_rate)
 
-        metric_map = {}  # resnet_act_utils.flops_metric_map(end_points, False)
+        metric_map = {}  # utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
-          metric_map.update(resnet_act_utils.act_metric_map(end_points, False))
+          metric_map.update(utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.sact:
-          resnet_act_utils.add_heatmaps_image_summary(end_points, border=10)
+          utils.add_heatmaps_image_summary(end_points, border=10)
 
         if FLAGS.sync_replicas:
           sync_optimizer = opt

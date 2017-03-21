@@ -25,7 +25,7 @@ from tensorflow.contrib import slim
 from tensorflow.contrib.slim.nets import resnet_utils
 
 import flopsometer
-import resnet_act_utils
+import utils
 
 
 @slim.add_arg_scope
@@ -124,7 +124,7 @@ def resnet(inputs,
     net, current_flops = flopsometer.conv2d(
         net, 16, 3, activation_fn=None, normalizer_fn=None)
     end_points['flops'] += current_flops
-    net, end_points = resnet_act_utils.stack_blocks(
+    net, end_points = utils.stack_blocks(
         net,
         blocks,
         use_act=use_act,

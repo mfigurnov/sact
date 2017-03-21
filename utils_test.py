@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Tests for resnet_act_utils."""
+"""Tests for utils."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -22,10 +22,10 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-import resnet_act_utils
+import utils
 
 
-class ResnetActUtilsTest(tf.test.TestCase):
+class UtilsTest(tf.test.TestCase):
 
   def testSactImageHeatmap(self):
     batch = 9
@@ -41,7 +41,7 @@ class ResnetActUtilsTest(tf.test.TestCase):
         'block_1/ponder_cost': 5 * tf.ones([batch, height / 2, width / 2]),
     }
 
-    heatmap = resnet_act_utils.sact_image_heatmap(
+    heatmap = utils.sact_image_heatmap(
         end_points,
         'ponder_cost',
         num_images=num_images,

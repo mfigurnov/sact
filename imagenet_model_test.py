@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Tests for resnet_act_imagenet_model."""
+"""Tests for imagenet_model."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -23,11 +23,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-import resnet_act_imagenet_model as resnet
-import resnet_act_utils
+import imagenet_model
+import utils
 
 
-class ResNetActImagenetModelTest(tf.test.TestCase):
+class ImagenetModelTest(tf.test.TestCase):
 
   def _runBatch(self,
                 is_training,
@@ -39,12 +39,13 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
 
     with self.test_session() as sess:
       images = tf.random_uniform((batch_size, height, width, 3))
-      with slim.arg_scope(resnet.resnet_arg_scope(is_training=is_training)):
-        logits, end_points = resnet.get_network(images, model, num_classes,
-                                                use_act, False)
+      with slim.arg_scope(
+          imagenet_model.resnet_arg_scope(is_training=is_training)):
+        logits, end_points = imagenet_model.get_network(
+            images, model, num_classes, use_act, False)
         if use_act:
-          metrics = resnet_act_utils.act_metric_map(end_points, False)
-          metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
+          metrics = utils.act_metric_map(end_points, False)
+          metrics.update(utils.flops_metric_map(end_points, False))
         else:
           metrics = {}
 
@@ -59,7 +60,7 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
         tf.losses.softmax_cross_entropy(
             logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
         if use_act:
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+          utils.add_all_ponder_costs(end_points, weights=1.0)
         total_loss = tf.losses.get_total_loss()
         optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
         train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -92,9 +93,9 @@ class ResNetActImagenetModelTest(tf.test.TestCase):
 
     with self.test_session() as sess:
       images = tf.random_uniform((batch_size, height, width, 3))
-      with slim.arg_scope(resnet.resnet_arg_scope(is_training=False)):
-        _, end_points = resnet.get_network(images, [101], num_classes,
-                                           False, False)
+      with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=False)):
+        _, end_points = imagenet_model.get_network(
+            images, [101], num_classes, False, False)
         flops = sess.run(end_points['flops'])
         # TF graph_metrics value: 15614055401 (0.1% difference)
         expected_flops = 15602814976
@@ -111,11 +112,11 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
     with self.test_session() as sess:
       images = tf.random_uniform((batch_size, height, width, 3))
       with slim.arg_scope(
-          resnet.resnet_arg_scope(is_training=is_training)):
-        logits, end_points = resnet.get_network(images, [50], num_classes,
-                                                True, True)
-        metrics = resnet_act_utils.act_metric_map(end_points, False)
-        metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
+          imagenet_model.resnet_arg_scope(is_training=is_training)):
+        logits, end_points = imagenet_model.get_network(
+            images, [50], num_classes, True, True)
+        metrics = utils.act_metric_map(end_points, False)
+        metrics.update(utils.flops_metric_map(end_points, False))
 
       # Check that there are no global updates as they break tf.cond.
       # TODO:re-enable
@@ -127,7 +128,7 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
         one_hot_labels = slim.one_hot_encoding(labels, num_classes)
         tf.losses.softmax_cross_entropy(
             logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
-        resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+        utils.add_all_ponder_costs(end_points, weights=1.0)
         total_loss = tf.losses.get_total_loss()
         optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
         train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -154,17 +155,17 @@ class ResNetSactImagenetModelTest(tf.test.TestCase):
 
     with self.test_session() as sess:
       images = tf.random_uniform((batch_size, height, width, 3))
-      with slim.arg_scope(resnet.resnet_arg_scope(is_training=is_training)):
-        logits, end_points = resnet.get_network(images, [50], num_classes,
-                                                True, True)
+      with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=is_training)):
+        logits, end_points = imagenet_model.get_network(
+            images, [50], num_classes, True, True)
 
-        vis_ponder = resnet_act_utils.sact_image_heatmap(
+        vis_ponder = utils.sact_image_heatmap(
             end_points,
             'ponder_cost',
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_units = resnet_act_utils.sact_image_heatmap(
+        vis_units = utils.sact_image_heatmap(
             end_points,
             'num_units',
             num_images=num_images,

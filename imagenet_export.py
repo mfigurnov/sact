@@ -28,8 +28,8 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 import imagenet_data_provider
-import resnet_act_imagenet_model
-import resnet_act_utils
+import imagenet_model
+import utils
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -72,17 +72,16 @@ def main(_):
     images, labels, _, num_classes = data_tuple
 
     # Define the model:
-    with slim.arg_scope(
-        resnet_act_imagenet_model.resnet_arg_scope(is_training=False)):
-      model = resnet_act_utils.split_and_int(FLAGS.model)
-      logits, end_points = resnet_act_imagenet_model.get_network(
+    with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=False)):
+      model = utils.split_and_int(FLAGS.model)
+      logits, end_points = imagenet_model.get_network(
           images,
           model,
           num_classes,
           use_act=FLAGS.use_act,
           sact=FLAGS.sact)
 
-      resnet_act_utils.export_to_h5(FLAGS.checkpoint_path, FLAGS.export_path,
+      utils.export_to_h5(FLAGS.checkpoint_path, FLAGS.export_path,
                                     images, end_points, FLAGS.num_examples,
                                     FLAGS.batch_size, FLAGS.sact)
 

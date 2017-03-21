@@ -28,8 +28,8 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 import imagenet_data_provider
-import resnet_act_imagenet_model
-import resnet_act_utils
+import imagenet_model
+import utils
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -86,10 +86,9 @@ def main(_):
     images, one_hot_labels, examples_per_epoch, num_classes = data_tuple
 
     # Define the model:
-    with slim.arg_scope(
-        resnet_act_imagenet_model.resnet_arg_scope(is_training=False)):
-      model = resnet_act_utils.parse_num_layers(FLAGS.model)
-      logits, end_points = resnet_act_imagenet_model.get_network(
+    with slim.arg_scope(imagenet_model.resnet_arg_scope(is_training=False)):
+      model = utils.parse_num_layers(FLAGS.model)
+      logits, end_points = imagenet_model.get_network(
           images,
           model,
           num_classes,
@@ -120,9 +119,9 @@ def main(_):
               slim.metrics.streaming_recall_at_k(end_points['predictions'],
                                                  labels, 5),
       }
-      metric_map.update(resnet_act_utils.flops_metric_map(end_points, True))
+      metric_map.update(utils.flops_metric_map(end_points, True))
       if FLAGS.use_act:
-        metric_map.update(resnet_act_utils.act_metric_map(end_points, True))
+        metric_map.update(utils.act_metric_map(end_points, True))
 
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
           metric_map)
@@ -133,7 +132,7 @@ def main(_):
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
       if FLAGS.use_act and FLAGS.sact:
-        resnet_act_utils.add_heatmaps_image_summary(end_points, border=10)
+        utils.add_heatmaps_image_summary(end_points, border=10)
 
       # This ensures that we make a single pass over all of the data.
       num_batches = math.ceil(FLAGS.num_examples / float(FLAGS.batch_size))

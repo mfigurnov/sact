@@ -23,29 +23,30 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import slim
 
-import resnet_act_utils
-import resnet_act_cifar_model as resnet
+import utils
+import cifar_model
 
 
-class ResNetActCifarModelTest(tf.test.TestCase):
+class CifarModelTest(tf.test.TestCase):
 
   def _runBatch(self, is_training, use_act, model=[5]):
     batch_size = 3
     height, width = 32, 32
     num_classes = 10
 
-    with slim.arg_scope(resnet.resnet_arg_scope(is_training=is_training)):
+    with slim.arg_scope(
+        cifar_model.resnet_arg_scope(is_training=is_training)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
-        logits, end_points = resnet.resnet(
+        logits, end_points = cifar_model.resnet(
             images,
             model=model,
             num_classes=num_classes,
             use_act=use_act,
             sact=False)
         if use_act:
-          metrics = resnet_act_utils.act_metric_map(end_points, False)
-          metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
+          metrics = utils.act_metric_map(end_points, False)
+          metrics.update(utils.flops_metric_map(end_points, False))
         else:
           metrics = {}
 
@@ -59,7 +60,7 @@ class ResNetActCifarModelTest(tf.test.TestCase):
           tf.losses.softmax_cross_entropy(
               logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
           if use_act:
-            resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+            utils.add_all_ponder_costs(end_points, weights=1.0)
           total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -91,10 +92,10 @@ class ResNetActCifarModelTest(tf.test.TestCase):
     height, width = 32, 32
     num_classes = 10
 
-    with slim.arg_scope(resnet.resnet_arg_scope(is_training=False)):
+    with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=False)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
-        _, end_points = resnet.resnet(
+        _, end_points = cifar_model.resnet(
             images,
             model=[18],
             num_classes=num_classes,
@@ -113,19 +114,17 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
     height, width = 32, 32
     num_classes = 10
 
-    with slim.arg_scope(
-        resnet.resnet_arg_scope(
-            is_training=is_training)):
+    with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=is_training)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
-        logits, end_points = resnet.resnet(
+        logits, end_points = cifar_model.resnet(
             images,
             model=[5] * 3,
             num_classes=num_classes,
             use_act=True,
             sact=True)
-        metrics = resnet_act_utils.act_metric_map(end_points, False)
-        metrics.update(resnet_act_utils.flops_metric_map(end_points, False))
+        metrics = utils.act_metric_map(end_points, False)
+        metrics.update(utils.flops_metric_map(end_points, False))
 
         # Check that there are no global updates as they break tf.cond.
         self.assertEqual(tf.get_collection(tf.GraphKeys.UPDATE_OPS), [])
@@ -136,7 +135,7 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
           one_hot_labels = slim.one_hot_encoding(labels, num_classes)
           tf.losses.softmax_cross_entropy(
               logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=1.0)
+          utils.add_all_ponder_costs(end_points, weights=1.0)
           total_loss = tf.losses.get_total_loss()
           optimizer = tf.train.MomentumOptimizer(0.1, 0.9)
           train_op = slim.learning.create_train_op(total_loss, optimizer)
@@ -161,23 +160,23 @@ class ResNetSactCifarModelTest(tf.test.TestCase):
     num_images = 3
     border = 5
 
-    with slim.arg_scope(resnet.resnet_arg_scope(is_training=is_training)):
+    with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=is_training)):
       with self.test_session() as sess:
         images = tf.random_uniform((batch_size, height, width, 3))
-        logits, end_points = resnet.resnet(
+        logits, end_points = cifar_model.resnet(
             images,
             model=[5] * 3,
             num_classes=num_classes,
             use_act=True,
             sact=True)
 
-        vis_ponder = resnet_act_utils.sact_image_heatmap(
+        vis_ponder = utils.sact_image_heatmap(
             end_points,
             'ponder_cost',
             num_images=num_images,
             alpha=0.75,
             border=border)
-        vis_units = resnet_act_utils.sact_image_heatmap(
+        vis_units = utils.sact_image_heatmap(
             end_points,
             'num_units',
             num_images=num_images,

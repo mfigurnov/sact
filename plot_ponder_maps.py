@@ -35,7 +35,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('input_file', None,
-                       'An HDF5 file produced by resnet_act_imagenet_export.')
+                       'An HDF5 file produced by imagenet_export.')
 
 tf.app.flags.DEFINE_string('output_dir', None,
                        'The directory to output the plotted ponder maps to.')

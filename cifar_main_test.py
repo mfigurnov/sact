@@ -22,13 +22,13 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-# import resnet_act_cifar_main
+# import cifar_main
 #
 #
 # FLAGS = tf.app.flags.FLAGS
 #
 #
-# class _ResNetActCifarMainTest(tf.test.TestCase):
+# class _CifarMainTest(tf.test.TestCase):
 #
 #   def testTrain(self):
 #     FLAGS.batch_size = 4
@@ -38,7 +38,7 @@ import tensorflow as tf
 #     FLAGS.num_residual_units = '5'
 #     FLAGS.use_act = True
 #     FLAGS.dataset_dir = 'testdata/cifar10'
-#     resnet_act_cifar_main.train()
+#     cifar_main.train()
 #
 #   # TODO: re-enable after training a new baseline model
 #   # def testTrainFinetune(self):
@@ -50,7 +50,7 @@ import tensorflow as tf
 #     # FLAGS.num_residitual_units = '5'
 #     # FLAGS.use_act = True
 #     # FLAGS.dataset_dir = 'testdata/cifar10'
-#     # resnet_act_cifar_main.train()
+#     # cifar_main.train()
 
 
 if __name__ == '__main__':

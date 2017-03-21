@@ -25,8 +25,8 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 import cifar_data_provider
-import resnet_act_cifar_model as resnet
-import resnet_act_utils
+import cifar_model
+import utils
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -123,9 +123,9 @@ def train():
       images, _, one_hot_labels, _, num_classes = data_tuple
 
       # Define the model:
-      with slim.arg_scope(resnet.resnet_arg_scope(is_training=True)):
-        model = resnet_act_utils.split_and_int(FLAGS.model)
-        logits, end_points = resnet.resnet(
+      with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=True)):
+        model = utils.split_and_int(FLAGS.model)
+        logits, end_points = cifar_model.resnet(
             images,
             model=model,
             num_classes=num_classes,
@@ -135,20 +135,20 @@ def train():
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(logits, one_hot_labels)
         if FLAGS.use_act:
-          resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+          utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('Total Loss', total_loss)
 
-        metric_map = {}  # resnet_act_utils.flops_metric_map(end_points, False)
+        metric_map = {}  # utils.flops_metric_map(end_points, False)
         if FLAGS.use_act:
-          metric_map.update(resnet_act_utils.act_metric_map(end_points, False))
+          metric_map.update(utils.act_metric_map(end_points, False))
         for name, value in metric_map.iteritems():
           tf.summary.scalar(name, value)
 
         if FLAGS.use_act and FLAGS.sact:
-          resnet_act_utils.add_heatmaps_image_summary(end_points)
+          utils.add_heatmaps_image_summary(end_points)
 
-        init_fn = resnet_act_utils.finetuning_init_fn(FLAGS.finetune_path)
+        init_fn = utils.finetuning_init_fn(FLAGS.finetune_path)
 
         # Specify the optimization scheme:
         global_step = slim.get_or_create_global_step()
@@ -191,9 +191,9 @@ def evaluate():
     images, _, one_hot_labels, num_samples, num_classes = data_tuple
 
     # Define the model:
-    with slim.arg_scope(resnet.resnet_arg_scope(is_training=False)):
-      model = resnet_act_utils.split_and_int(FLAGS.model)
-      logits, end_points = resnet.resnet(
+    with slim.arg_scope(cifar_model.resnet_arg_scope(is_training=False)):
+      model = utils.split_and_int(FLAGS.model)
+      logits, end_points = cifar_model.resnet(
           images,
           model=model,
           num_classes=num_classes,
@@ -204,7 +204,7 @@ def evaluate():
 
       tf.losses.softmax_cross_entropy(logits, one_hot_labels)
       if FLAGS.use_act:
-        resnet_act_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
+        utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
 
       loss = tf.losses.get_total_loss()
 
@@ -214,9 +214,9 @@ def evaluate():
           'eval/Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
           'eval/Mean Loss': slim.metrics.streaming_mean(loss),
       }
-      metric_map.update(resnet_act_utils.flops_metric_map(end_points, True))
+      metric_map.update(utils.flops_metric_map(end_points, True))
       if FLAGS.use_act:
-        metric_map.update(resnet_act_utils.act_metric_map(end_points, True))
+        metric_map.update(utils.act_metric_map(end_points, True))
       names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
           metric_map)
 
@@ -226,7 +226,7 @@ def evaluate():
         tf.add_to_collection(tf.GraphKeys.SUMMARIES, summ)
 
       if FLAGS.use_act and FLAGS.sact:
-        resnet_act_utils.add_heatmaps_image_summary(end_points)
+        utils.add_heatmaps_image_summary(end_points)
 
       # This ensures that we make a single pass over all of the data.
       num_batches = math.ceil(num_samples / float(FLAGS.eval_batch_size))

@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Provides utilities to preprocess images for the Inception networks."""
+"""Provides utilities to preprocess images for the Inception networks.
+
+Copied from https://github.com/tensorflow/models/blob/master/slim/preprocessing/inception_preprocessing.py
+"""
 
 from __future__ import absolute_import
 from __future__ import division

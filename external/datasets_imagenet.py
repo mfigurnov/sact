@@ -27,6 +27,8 @@ For each synset, there are on average 150 images with bounding boxes."
 
 WARNING: Don't use for object detection, in this case all the bounding boxes
 of the image belong to just one class.
+
+Copied from https://github.com/tensorflow/models/blob/master/slim/datasets/imagenet.py
 """
 from __future__ import absolute_import
 from __future__ import division

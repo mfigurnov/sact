@@ -16,6 +16,8 @@
 
 The dataset scripts used to create the dataset can be found at:
 tensorflow/models/slim/datasets/download_and_convert_cifar10.py
+
+Copied from https://github.com/tensorflow/models/blob/master/slim/datasets/cifar10.py
 """
 
 from __future__ import absolute_import

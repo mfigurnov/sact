@@ -13,7 +13,10 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Adaptive computation time residual network for CIFAR-10."""
+""" Adaptive computation time residual network for CIFAR-10.
+
+The code is based on https://github.com/tensorflow/models/blob/master/resnet/resnet_model.py
+"""
 
 from __future__ import absolute_import
 from __future__ import division

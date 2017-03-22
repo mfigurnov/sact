@@ -56,8 +56,7 @@ def provide_data(split_name, batch_size, dataset_dir=None):
     if dataset_dir is None:
       dataset_dir = os.path.expanduser('~/tensorflow/data/cifar10')
 
-    dataset = datasets_cifar10.get_split(
-        split_name, dataset_dir)
+    dataset = datasets_cifar10.get_split(split_name, dataset_dir)
     provider = dataset_data_provider.DatasetDataProvider(
         dataset,
         common_queue_capacity=5 * batch_size,
@@ -68,7 +67,7 @@ def provide_data(split_name, batch_size, dataset_dir=None):
 
     image_size = 32
     if is_train:
-      num_threads = 32
+      num_threads = 4
 
       image = tf.image.resize_image_with_crop_or_pad(image, image_size + 4,
                                                      image_size + 4)

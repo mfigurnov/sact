@@ -31,11 +31,10 @@ from external import datasets_imagenet
 
 
 def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
-                 num_readers=1, num_preprocessing_threads=1, image_size=224):
+                 num_readers=4, num_preprocessing_threads=4, image_size=224):
   """Provides batches of Imagenet data.
 
-  Applies the processing in
-    tensorflow/models/inception/inception/image_processing
+  Applies the processing in external/inception_preprocessing
   to the TF-Slim ImageNet dataset class.
 
   Args:
@@ -62,19 +61,22 @@ def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
     if dataset_dir is None:
       dataset_dir = os.path.expanduser('~/tensorflow/data/imagenet')
 
+    if not is_training:
+      num_readers = 1
+
     dataset = datasets_imagenet.get_split(split_name, dataset_dir)
     provider = dataset_data_provider.DatasetDataProvider(
         dataset,
         num_readers=num_readers,
         shuffle=is_training,
-        common_queue_capacity=20 * batch_size,
-        common_queue_min=10 * batch_size)
+        common_queue_capacity=5 * batch_size,
+        common_queue_min=batch_size)
 
     [image, bbox, label] = provider.get(['image', 'object/bbox', 'label'])
     bbox = tf.expand_dims(bbox, 0)
 
     image = inception_preprocessing.preprocess_image(
-      image, image_size, image_size, is_training, bbox, fast_mode=True)
+      image, image_size, image_size, is_training, bbox, fast_mode=False)
 
     images, labels = tf.train.batch(
         [image, label],

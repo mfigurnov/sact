@@ -68,8 +68,6 @@ def main(_):
 
   g = tf.Graph()
   with g.as_default():
-    tf_global_step = slim.get_or_create_global_step()
-
     data_tuple = imagenet_data_provider.provide_data(
         FLAGS.split_name,
         FLAGS.batch_size,

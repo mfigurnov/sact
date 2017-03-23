@@ -180,7 +180,7 @@ def sact_map(end_points, metric_name):
   return tf.add_n(heatmaps)
 
 
-def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
+def export_to_h5(checkpoint_dir, export_path, images, end_points, num_samples,
                  batch_size, sact):
   """Exports ponder cost maps and other useful info to an HDF5 file."""
   output_file = h5py.File(export_path, 'w')
@@ -209,6 +209,8 @@ def export_to_h5(checkpoint_path, export_path, images, end_points, num_samples,
         key, sh, compression='lzf')
 
   variables_to_restore = slim.get_model_variables()
+  checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
+  assert checkpoint_path is not None
   init_fn = slim.assign_from_checkpoint_fn(checkpoint_path,
                                            variables_to_restore)
 

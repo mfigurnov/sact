@@ -34,7 +34,13 @@ import utils
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('num_examples', 1000, 'The number of examples to evaluate')
+tf.app.flags.DEFINE_integer(
+    'num_examples', 1000,
+    'The number of examples to evaluate')
+
+tf.app.flags.DEFINE_integer(
+    'batch_size', 32,
+    'The number of examples to evaluate per evaluation iteration.')
 
 tf.app.flags.DEFINE_string(
     'split_name', 'validation',
@@ -47,20 +53,22 @@ tf.app.flags.DEFINE_string(
 
 tf.app.flags.DEFINE_string(
     'model_type', 'vanilla',
-    'Options: vanilla (basic ResNet model), act (Adaptive Computation Time), '
+    'Options: act (Adaptive Computation Time), '
     'act_early_stopping (act implementation which actually saves time), '
     'sact (Spatially Adaptive Computation Time)')
 
-tf.app.flags.DEFINE_string('checkpoint_path', '',
-                       'Path for the checkpoint to process.')
+tf.app.flags.DEFINE_string('checkpoint_dir', '',
+                           'Directory with the checkpoints.')
 
 tf.app.flags.DEFINE_string('export_path', '',
-                       'Path to write the hdf5 file with exported data.')
+                           'Path to write the hdf5 file with exported data.')
 
 tf.app.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
 
 
 def main(_):
+  assert FLAGS.model_type in ('act', 'act_early_stopping', 'sact')
+
   g = tf.Graph()
   with g.as_default():
     tf_global_step = slim.get_or_create_global_step()
@@ -81,9 +89,9 @@ def main(_):
           num_classes,
           model_type=FLAGS.model_type)
 
-      summary_utils.export_to_h5(FLAGS.checkpoint_path, FLAGS.export_path,
+      summary_utils.export_to_h5(FLAGS.checkpoint_dir, FLAGS.export_path,
                                  images, end_points, FLAGS.num_examples,
-                                 FLAGS.batch_size, FLAGS.sact)
+                                 FLAGS.batch_size, FLAGS.model_type=='sact')
 
 
 if __name__ == '__main__':

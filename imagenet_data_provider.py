@@ -43,7 +43,7 @@ def provide_data(split_name, batch_size, dataset_dir=None, is_training=False,
     dataset_dir: Directory where the ImageNet TFRecord files live.
                  Defaults to "~/tensorflow/data/imagenet"
     is_training: Whether to apply data augmentation and shuffling.
-    num_readers: Number of parallel readers.
+    num_readers: Number of parallel readers. Always set to one for evaluation.
     num_preprocessing_threads: Number of preprocessing threads.
 
   Returns:

@@ -11,7 +11,7 @@ Michael Figurnov, Maxwell D. Collins, Yukun Zhu, Li Zhang, Jonathan Huang, Dmitr
 
 Image (with detections)          | Ponder cost map
 :-------------------------------:|:--------------------------------------:
-![](pics/export-image-442041.jpg)|![](pics/export-image-442041-ponder.png)
+![](pics/export-image-442041.jpg)|![](pics/export-image-442041-ponder.jpg)
 
 ## Setup
 

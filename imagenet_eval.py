@@ -13,10 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Evaluates a trained ResNet model.
-
-See the README.md file for compilation and running instructions.
-"""
+"""Evaluates a trained ResNet model."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -81,7 +78,7 @@ tf.app.flags.DEFINE_bool('evaluate_once', False, 'Evaluate the model just once?'
 def main(_):
   g = tf.Graph()
   with g.as_default():
-    tf_global_step = slim.get_or_create_global_step()
+    # tf_global_step = slim.get_or_create_global_step()
 
     data_tuple = imagenet_data_provider.provide_data(
         FLAGS.split_name,
@@ -101,16 +98,17 @@ def main(_):
 
       # For eval, explicitly add moving_mean and moving_variance variables to
       # the MOVING_AVERAGE_VARIABLES collection.
-      variable_averages = tf.train.ExponentialMovingAverage(
-          FLAGS.moving_average_decay, tf_global_step)
+      # variable_averages = tf.train.ExponentialMovingAverage(
+      #     FLAGS.moving_average_decay, tf_global_step)
+      #
+      # for var in tf.get_collection('moving_vars'):
+      #   tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
+      # for var in slim.get_model_variables():
+      #   tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
 
-      for var in tf.get_collection('moving_vars'):
-        tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
-      for var in slim.get_model_variables():
-        tf.add_to_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES, var)
-
-      variables_to_restore = variable_averages.variables_to_restore()
-      variables_to_restore[tf_global_step.op.name] = tf_global_step
+    #   variables_to_restore = variable_averages.variables_to_restore()
+      # variables_to_restore = dict()
+      # variables_to_restore[tf_global_step.op.name] = tf_global_step
 
       predictions = tf.argmax(end_points['predictions'], 1)
 
@@ -157,7 +155,7 @@ def main(_):
           logdir=FLAGS.eval_dir,
           num_evals=num_batches,
           eval_op=names_to_updates.values(),
-          variables_to_restore=variables_to_restore,
+          # variables_to_restore=variables_to_restore,
           **kwargs)
 
 

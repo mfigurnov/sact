@@ -13,10 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Evaluates a trained ResNet model.
-
-See the README.md file for compilation and running instructions.
-"""
+"""Exports data about a trained ResNet-ACT/SACT model into a HDF5 file."""
 
 from __future__ import absolute_import
 from __future__ import division

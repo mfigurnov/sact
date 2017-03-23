@@ -101,7 +101,7 @@ tf.app.flags.DEFINE_float('tau', 1.0, 'The value of tau (ponder relative cost).'
 
 tf.app.flags.DEFINE_string(
   'model',
-  '18',
+  '5',
   'An underscore separated string, number of residual units per block. '
   'If only one number is provided, uses the same number of units in all blocks')
 

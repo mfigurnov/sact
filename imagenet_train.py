@@ -13,10 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Trains a ResNet-ACT model.
-
-See the README.md file for compilation and running instructions.
-"""
+"""Trains a ResNet-ACT model."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -141,15 +138,15 @@ def main(_):
         moving_average_variables = slim.get_model_variables()
         moving_average_variables.append(total_loss)
 
-        variable_averages = tf.train.ExponentialMovingAverage(
-            FLAGS.moving_average_decay, slim.get_or_create_global_step())
+        # variable_averages = tf.train.ExponentialMovingAverage(
+        #     FLAGS.moving_average_decay, slim.get_or_create_global_step())
 
         # If sync_replicas is enabled, the averaging will be done in the chief
         # queue runner.
-        if not FLAGS.sync_replicas:
-          tf.add_to_collection(
-              tf.GraphKeys.UPDATE_OPS,
-              variable_averages.apply(moving_average_variables))
+        # if not FLAGS.sync_replicas:
+        #   tf.add_to_collection(
+        #       tf.GraphKeys.UPDATE_OPS,
+        #       variable_averages.apply(moving_average_variables))
 
         # Configure the learning rate using an exponetial decay.
         decay_steps = int(examples_per_epoch / FLAGS.batch_size *
@@ -167,15 +164,15 @@ def main(_):
 
         opt = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
 
-        if FLAGS.sync_replicas:
-          replica_id = tf.constant(FLAGS.task, tf.int32, shape=())
-          opt = tf.train.SyncReplicasOptimizer(
-              opt=opt,
-              replicas_to_aggregate=FLAGS.replicas_to_aggregate,
-              variable_averages=variable_averages,
-              variables_to_average=moving_average_variables,
-              replica_id=replica_id,
-              total_num_replicas=FLAGS.worker_replicas)
+        # if FLAGS.sync_replicas:
+        #   replica_id = tf.constant(FLAGS.task, tf.int32, shape=())
+        #   opt = tf.train.SyncReplicasOptimizer(
+        #       opt=opt,
+        #       replicas_to_aggregate=FLAGS.replicas_to_aggregate,
+        #       variable_averages=variable_averages,
+        #       variables_to_average=moving_average_variables,
+        #       replica_id=replica_id,
+        #       total_num_replicas=FLAGS.worker_replicas)
 
         init_fn = training_utils.finetuning_init_fn(FLAGS.finetune_path)
 

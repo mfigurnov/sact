@@ -55,7 +55,8 @@ class ImagenetModelTest(tf.test.TestCase):
             (batch_size,), maxval=num_classes, dtype=tf.int32)
         one_hot_labels = slim.one_hot_encoding(labels, num_classes)
         tf.losses.softmax_cross_entropy(
-            logits, one_hot_labels, label_smoothing=0.1, weights=1.0)
+            onehot_labels=one_hot_labels, logits=logits,
+            label_smoothing=0.1, weights=1.0)
         if model_type in ('act', 'act_early_stopping', 'sact'):
           training_utils.add_all_ponder_costs(end_points, weights=1.0)
         total_loss = tf.losses.get_total_loss()

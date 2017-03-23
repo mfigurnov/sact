@@ -75,9 +75,6 @@ tf.app.flags.DEFINE_float('learning_rate_decay_factor', 0.1,
 tf.app.flags.DEFINE_float('num_epochs_per_decay', 30.0,
                       'Number of epochs after which learning rate decays.')
 
-tf.app.flags.DEFINE_bool('sync_replicas', False,
-                     'Whether or not to synchronize the replicas during training.')
-
 tf.app.flags.DEFINE_integer(
     'replicas_to_aggregate', 1,
     'The Number of gradients to collect before updating params.')
@@ -133,26 +130,9 @@ def main(_):
           training_utils.add_all_ponder_costs(end_points, weights=FLAGS.tau)
         total_loss = tf.losses.get_total_loss()
 
-        # Setup the moving averages:
-        moving_average_variables = slim.get_model_variables()
-        moving_average_variables.append(total_loss)
-
-        # variable_averages = tf.train.ExponentialMovingAverage(
-        #     FLAGS.moving_average_decay, slim.get_or_create_global_step())
-
-        # If sync_replicas is enabled, the averaging will be done in the chief
-        # queue runner.
-        # if not FLAGS.sync_replicas:
-        #   tf.add_to_collection(
-        #       tf.GraphKeys.UPDATE_OPS,
-        #       variable_averages.apply(moving_average_variables))
-
         # Configure the learning rate using an exponetial decay.
         decay_steps = int(examples_per_epoch / FLAGS.batch_size *
                           FLAGS.num_epochs_per_decay)
-
-        if FLAGS.sync_replicas:
-          decay_steps /= FLAGS.replicas_to_aggregate
 
         learning_rate = tf.train.exponential_decay(
             FLAGS.learning_rate,
@@ -162,16 +142,6 @@ def main(_):
             staircase=True)
 
         opt = tf.train.MomentumOptimizer(learning_rate, FLAGS.momentum)
-
-        # if FLAGS.sync_replicas:
-        #   replica_id = tf.constant(FLAGS.task, tf.int32, shape=())
-        #   opt = tf.train.SyncReplicasOptimizer(
-        #       opt=opt,
-        #       replicas_to_aggregate=FLAGS.replicas_to_aggregate,
-        #       variable_averages=variable_averages,
-        #       variables_to_average=moving_average_variables,
-        #       replica_id=replica_id,
-        #       total_num_replicas=FLAGS.worker_replicas)
 
         init_fn = training_utils.finetuning_init_fn(FLAGS.finetune_path)
 
@@ -193,12 +163,7 @@ def main(_):
         if FLAGS.model_type == 'sact':
           summary_utils.add_heatmaps_image_summary(end_points, border=10)
 
-        if FLAGS.sync_replicas:
-          sync_optimizer = opt
-          startup_delay_steps = 0
-        else:
-          sync_optimizer = None
-          startup_delay_steps = FLAGS.task * FLAGS.startup_delay_steps
+        startup_delay_steps = FLAGS.task * FLAGS.startup_delay_steps
 
         slim.learning.train(
             train_tensor,
@@ -208,8 +173,7 @@ def main(_):
             is_chief=(FLAGS.task == 0),
             startup_delay_steps=startup_delay_steps,
             save_summaries_secs=FLAGS.save_summaries_secs,
-            save_interval_secs=FLAGS.save_interval_secs,
-            sync_optimizer=sync_optimizer)
+            save_interval_secs=FLAGS.save_interval_secs)
 
 
 if __name__ == '__main__':

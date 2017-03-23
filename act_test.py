@@ -368,7 +368,7 @@ class SactTest(tf.test.TestCase):
       (cost_out, num_units_out, flops_out, distrib_out, outputs_out,
        residual_masks_out) = sess.run(
            (cost, num_units, flops, distrib, outputs, residual_masks[1:]))
-    # Batch x Height x Width x Channels
+    # Batch x Height x Width
     sh = [1, 1, 2]
     self.assertAllClose(cost_out, np.array([2.1, 3.8]).reshape(sh))
     self.assertAllEqual(num_units_out, np.array([2, 3]).reshape(sh))

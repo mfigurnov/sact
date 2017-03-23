@@ -334,19 +334,24 @@ def spatially_adaptive_computation_time(inputs, unit, max_units,
       Defaults to 'act'.
 
   Returns:
-    ponder_cost: A 1-D `Tensor` of type `float32`.
-      A differentiable upper bound on the number of units.
-    num_units: A 1-D `Tensor` of type `int32`.
-      Actual number of units that took place. num_units < ponder_cost.
+    ponder_cost: A 3-D `Tensor` of type `float32`.
+      Shape is [batch, height, width].
+      A differentiable upper bound on the number of units per spatial position.
+    num_units: A 3-D `Tensor` of type `int32`.
+      Shape is [batch, height, width].
+      Actual number of units per spatial position that were used.
+      num_units < ponder_cost.
     flops: A 1-D `Tensor` of type `int64`.
-      Number of floating point operations that took place.
-    halting_distribution: A 2-D `Tensor` of type `float32`.
-      Shape is `[batch, max_units]`. Halting probability distribution.
-      halting_distribution[i, j] is probability of computation for i-th object
-      to halt at j-th unit. Sum of every row should be close to one.
+      Number of floating point operations that were used.
+    halting_distribution: A 4-D `Tensor` of type `float32`.
+      Shape is `[batch, height, width, max_units]`.
+      Halting probability distribution.
+      halting_distribution[i, h, w, j] is the probability of computation
+      for i-th object at the spatial position (h, w) to halt at j-th unit.
+      Sum over the last dimension should be close to one.
     outputs: A 4-D `Tensor` of shape [batch, height, width, depth]. Outputs of
       the ACT module, intermediate states weighted by the halting distribution
-      for the units.
+      tensor.
   """
   with tf.variable_scope(scope):
     halting_distribs = []

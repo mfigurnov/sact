@@ -9,6 +9,10 @@ Paper describing the project:
 
 Michael Figurnov, Maxwell D. Collins, Yukun Zhu, Li Zhang, Jonathan Huang, Dmitry Vetrov, Ruslan Salakhutdinov. Spatially Adaptive Computation Time for Residual Networks. *CVPR 2017* [[arxiv]](https://arxiv.org/abs/1612.02297).
 
+Image (with detections)          | Ponder cost map
+:-------------------------------:|:--------------------------------------:
+![](pics/export-image-442041.jpg)|![](pics/export-image-442041-ponder.png)
+
 ## Setup
 
 Install prerequisites:

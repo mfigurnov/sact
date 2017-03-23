@@ -124,8 +124,7 @@ def main(_):
             images,
             model,
             num_classes,
-            model_type=FLAGS.model_type,
-            sact=FLAGS.sact)
+            model_type=FLAGS.model_type)
 
         # Specify the loss function:
         tf.losses.softmax_cross_entropy(

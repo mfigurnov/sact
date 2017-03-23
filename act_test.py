@@ -142,7 +142,7 @@ class ActWrapperTest(tf.test.TestCase):
 
   def testEqualValuesInBatch(self):
     (cost, num_units, flops, distrib, outputs, cost_grad) = self._runAct(
-        [range(5)] * 2, [[0.999] * 5] * 2)
+        [list(range(5))] * 2, [[0.999] * 5] * 2)
     self.assertAlmostEqual(cost[0], cost[1])
     self.assertEqual(num_units[0], num_units[1])
     self.assertEqual(flops[0], flops[1])
@@ -152,7 +152,7 @@ class ActWrapperTest(tf.test.TestCase):
 
   def testStopsAtFirstUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad) = self._runAct(
-        [range(5)], [[0.999] + [0.5] * 4])
+        [list(range(5))], [[0.999] + [0.5] * 4])
     self.assertAllClose(cost, [2.0])
     self.assertAllEqual(num_units, [1])
     self.assertAllEqual(flops, [2])
@@ -162,7 +162,7 @@ class ActWrapperTest(tf.test.TestCase):
 
   def testStopsAtMiddleUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad) = self._runAct(
-        [range(5)], [[0.01, 0.5, 0.6, 0.7, 0.8]])
+        [list(range(5))], [[0.01, 0.5, 0.6, 0.7, 0.8]])
     self.assertAllClose(cost, [3.49])
     self.assertAllEqual(num_units, [3])
     self.assertAllEqual(flops, [6])
@@ -172,7 +172,7 @@ class ActWrapperTest(tf.test.TestCase):
 
   def testStopsAtLastUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad) = self._runAct(
-        [range(5)], [[0.01] * 5])
+        [list(range(5))], [[0.01] * 5])
     self.assertAllClose(cost, [5.96])
     self.assertAllEqual(num_units, [5])
     self.assertAllEqual(flops, [10])
@@ -256,7 +256,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
 
   def testEqualValuesInBatch(self):
     (cost, num_units, flops, distrib, outputs, cost_grad,
-     unit_counter) = self._runAct([range(5)] * 2, [[0.999] * 5] * 2)
+     unit_counter) = self._runAct([list(range(5))] * 2, [[0.999] * 5] * 2)
     self.assertAlmostEqual(cost[0], cost[1])
     self.assertEqual(num_units[0], num_units[1])
     self.assertEqual(flops[0], flops[1])
@@ -267,7 +267,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
 
   def testStopsAtFirstUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad,
-     unit_counter) = self._runAct([range(5)], [[0.999] + [0.5] * 4])
+     unit_counter) = self._runAct([list(range(5))], [[0.999] + [0.5] * 4])
     self.assertAllClose(cost, [2.0])
     self.assertAllEqual(num_units, [1])
     self.assertAllEqual(flops, [2])
@@ -278,7 +278,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
 
   def testStopsAtMiddleUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad,
-     unit_counter) = self._runAct([range(5)], [[0.01, 0.5, 0.6, 0.7, 0.8]])
+     unit_counter) = self._runAct([list(range(5))], [[0.01, 0.5, 0.6, 0.7, 0.8]])
     self.assertAllClose(cost, [3.49])
     self.assertAllEqual(num_units, [3])
     self.assertAllEqual(flops, [6])
@@ -289,7 +289,7 @@ class ActEarlyStoppingTest(tf.test.TestCase):
 
   def testStopsAtLastUnit(self):
     (cost, num_units, flops, distrib, outputs, cost_grad,
-     unit_counter) = self._runAct([range(5)], [[0.01] * 5])
+     unit_counter) = self._runAct([list(range(5))], [[0.01] * 5])
     self.assertAllClose(cost, [5.96])
     self.assertAllEqual(num_units, [5])
     self.assertAllEqual(flops, [10])

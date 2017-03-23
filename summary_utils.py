@@ -33,7 +33,7 @@ def moments_metric_map(x, name, delimiter='_', do_shift=False):
   else:
     shift = None
 
-  mean, var = tf.nn.moments(x, range(len(x.get_shape().as_list())),
+  mean, var = tf.nn.moments(x, list(range(len(x.get_shape().as_list()))),
                             shift=shift)
   metric_map = {
       '{}{}mean'.format(name, delimiter): mean,

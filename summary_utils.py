@@ -25,65 +25,69 @@ import tensorflow as tf
 from tensorflow.contrib import slim
 
 
-def moments_metric_map(x, name, delimiter='_', do_shift=False):
-  tf.summary.histogram(name, x)
+def moments_metric_map(x, name, mean_metric, delimiter='_', do_shift=False):
+  if not mean_metric:
+    if do_shift:
+      shift = tf.reduce_mean(x)  # Seems to help numerical issues, but slower
+    else:
+      shift = None
 
-  if do_shift:
-    shift = tf.reduce_mean(x)  # Seems to help numerical issues, but slower
+    mean, var = tf.nn.moments(x, list(range(len(x.get_shape().as_list()))),
+                              shift=shift)
+    std = tf.sqrt(tf.maximum(0.0, var))
   else:
-    shift = None
+    mean = tf.contrib.metrics.streaming_mean(x)
+    # Variance is estimated over the whole dataset, therefore it will
+    # generally be higher than during training.
+    var_value, var_update = tf.contrib.metrics.streaming_covariance(x, x)
+    std_value = tf.sqrt(tf.maximum(0.0, var_value))
+    std = std_value, var_update
 
-  mean, var = tf.nn.moments(x, list(range(len(x.get_shape().as_list()))),
-                            shift=shift)
   metric_map = {
       '{}{}mean'.format(name, delimiter): mean,
-      '{}{}std'.format(name, delimiter): tf.sqrt(tf.maximum(0.0, var))
+      '{}{}std'.format(name, delimiter): std,
   }
+
   return metric_map
 
 
 def act_metric_map(end_points, mean_metric):
-  """Assembles ACT-specific metrics into a map for use in slim.metrics."""
+  """Assembles ACT-specific metrics into a map for use in tf.contrib.metrics."""
   metric_map = {}
 
   for block_scope in end_points['block_scopes']:
     name = '{}/ponder_cost'.format(block_scope)
     ponder_cost = end_points[name]
-    ponder_map = moments_metric_map(ponder_cost, name)
+    ponder_map = moments_metric_map(ponder_cost, name, mean_metric)
     metric_map.update(ponder_map)
 
     name = '{}/num_units'.format(block_scope)
     num_units = tf.to_float(end_points[name])
-    num_units_map = moments_metric_map(num_units, name)
+    num_units_map = moments_metric_map(num_units, name, mean_metric)
     metric_map.update(num_units_map)
 
-    name = '{}/num_units_max'.format(block_scope)
-    metric_map[name] = tf.reduce_max(num_units)
-
-  if mean_metric:
-    metric_map = {k: slim.metrics.streaming_mean(v)
-                  for k, v in metric_map.iteritems()}
+    if not mean_metric:
+      # Not sure how to make a streaming version of this metric,
+      # so tracking it only during training.
+      name = '{}/num_units_max'.format(block_scope)
+      metric_map[name] = tf.reduce_max(num_units)
 
   return metric_map
 
 
 def flops_metric_map(end_points, mean_metric, total_name='Total Flops'):
-  """Assembles flops-count metrics into a map for use in slim.metrics."""
+  """Assembles flops-count metrics into a map for use in tf.contrib.metrics."""
   metric_map = {}
   total_flops = tf.to_float(end_points['flops'])
-  flops_map = moments_metric_map(total_flops, total_name, delimiter='/',
-                                 do_shift=True)
+  flops_map = moments_metric_map(total_flops, total_name, mean_metric,
+      delimiter='/', do_shift=True)
   metric_map.update(flops_map)
 
   for block_scope in end_points['block_scopes']:
     name = '{}/flops'.format(block_scope)
     flops = tf.to_float(end_points[name])
-    flops_map = moments_metric_map(flops, name, do_shift=True)
+    flops_map = moments_metric_map(flops, name, mean_metric, do_shift=True)
     metric_map.update(flops_map)
-
-  if mean_metric:
-    metric_map = {k: slim.metrics.streaming_mean(v)
-                  for k, v in metric_map.iteritems()}
 
   return metric_map
 
@@ -234,7 +238,3 @@ def export_to_h5(checkpoint_dir, export_path, images, end_points, num_samples,
       end_points_out = sess.run(keys_to_tensors)
       for key, dataset in keys_to_datasets.iteritems():
         dataset[i * batch_size:(i + 1) * batch_size, ...] = end_points_out[key]
-
-
-def split_and_int(s):
-  return [int(x) for x in s.split('_')]

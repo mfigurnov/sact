@@ -45,8 +45,10 @@ class ImagenetModelTest(tf.test.TestCase):
         logits, end_points = imagenet_model.get_network(
             images, model, num_classes, model_type='sact', base_channels=1)
         if model_type in ('act', 'act_early_stopping', 'sact'):
-          metrics = summary_utils.act_metric_map(end_points, False)
-          metrics.update(summary_utils.flops_metric_map(end_points, False))
+          metrics = summary_utils.act_metric_map(end_points,
+              not is_training)
+          metrics.update(summary_utils.flops_metric_map(end_points,
+              not is_training))
         else:
           metrics = {}
 
@@ -65,7 +67,8 @@ class ImagenetModelTest(tf.test.TestCase):
         sess.run(tf.global_variables_initializer())
         sess.run((train_op, metrics))
       else:
-        sess.run(tf.global_variables_initializer())
+        sess.run([tf.local_variables_initializer(),
+            tf.global_variables_initializer()])
         logits_out, metrics_out = sess.run((logits, metrics))
         self.assertEqual(logits_out.shape, (batch_size, num_classes))
 

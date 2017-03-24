@@ -216,13 +216,15 @@ def evaluate():
       # Define the metrics:
       labels = tf.argmax(one_hot_labels, 1)
       metric_map = {
-          'eval/Accuracy': slim.metrics.streaming_accuracy(predictions, labels),
-          'eval/Mean Loss': slim.metrics.streaming_mean(loss),
+          'eval/Accuracy':
+                tf.contrib.metrics.streaming_accuracy(predictions, labels),
+          'eval/Mean Loss':
+                tf.contrib.metrics.streaming_mean(loss),
       }
       metric_map.update(summary_utils.flops_metric_map(end_points, True))
       if FLAGS.model_type in ('act', 'act_early_stopping', 'sact'):
         metric_map.update(summary_utils.act_metric_map(end_points, True))
-      names_to_values, names_to_updates = slim.metrics.aggregate_metric_map(
+      names_to_values, names_to_updates = tf.contrib.metrics.aggregate_metric_map(
           metric_map)
 
       for name, value in names_to_values.iteritems():

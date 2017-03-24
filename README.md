@@ -70,10 +70,11 @@ python cifar_main.py --model_type=sact --model=5 --tau=0.01 --checkpoint_dir='mo
 This model is expected to achieve an accuracy of 91.82%, with the output looking like so:
 
 ```
-...
 eval/Accuracy[0.9182]
 eval/Mean Loss[0.59591407]
-Total Flops/mean[82393208]
+Total Flops/mean[82393168]
+Total Flops/std[7588926]
+...
 ```
 
 ## ImageNet
@@ -94,10 +95,10 @@ python imagenet_eval.py --model_type=sact --model=101 --tau=0.005 --checkpoint_d
 
 Expected output:
 ```
-eval/Accuracy[0.75639796]
-eval/Recall@5[0.92788309]
-block4/flops_std[89368584]
-block4/flops_mean[1.5324621e+09]
+eval/Accuracy[0.75609803]
+eval/Recall@5[0.9274632117722329]
+Total Flops/mean[1.1100941e+10]
+Total Flops/std[4.5691142e+08]
 ...
 ```
 

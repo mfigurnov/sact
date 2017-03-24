@@ -32,21 +32,21 @@ import utils
 FLAGS = tf.app.flags.FLAGS
 
 tf.app.flags.DEFINE_string('master', '',
-                       'Name of the TensorFlow master to use.')
+                           'Name of the TensorFlow master to use.')
 
 tf.app.flags.DEFINE_string('checkpoint_dir', '/tmp/resnet/',
-                       'Directory where the model was written to.')
+                           'Directory where the model was written to.')
 
 tf.app.flags.DEFINE_string('eval_dir', '/tmp/resnet/',
-                       'Directory where the results are saved to.')
+                           'Directory where the results are saved to.')
 
 tf.app.flags.DEFINE_string('dataset_dir', None, 'Directory with Imagenet data.')
 
 tf.app.flags.DEFINE_integer('eval_interval_secs', 600,
-                        'The frequency, in seconds, with which evaluation is run.')
+                            'The frequency, in seconds, with which evaluation is run.')
 
 tf.app.flags.DEFINE_integer('num_examples', 50000,
-                        'The number of examples to evaluate')
+                            'The number of examples to evaluate')
 
 tf.app.flags.DEFINE_integer(
     'batch_size', 32,
@@ -57,7 +57,10 @@ tf.app.flags.DEFINE_string(
     'The name of the train/test split, either \'train\' or \'validation\'.')
 
 tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
-                      'The decay to use for the moving average.')
+                          'The decay to use for the moving average.')
+
+tf.app.flags.DEFINE_integer('image_size', 224,
+                            'Image resolution for resize.')
 
 tf.app.flags.DEFINE_string(
     'model', '101',
@@ -82,7 +85,8 @@ def main(_):
         FLAGS.split_name,
         FLAGS.batch_size,
         dataset_dir=FLAGS.dataset_dir,
-        is_training=False)
+        is_training=False,
+        image_size=FLAGS.image_size)
     images, one_hot_labels, examples_per_epoch, num_classes = data_tuple
 
     # Define the model:

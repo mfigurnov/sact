@@ -82,6 +82,9 @@ tf.app.flags.DEFINE_integer(
 tf.app.flags.DEFINE_float('moving_average_decay', 0.9999,
                      'The decay to use for the moving average.')
 
+tf.app.flags.DEFINE_integer('image_size', 224,
+                            'Image resolution for resize.')
+
 tf.app.flags.DEFINE_string(
     'model', '101',
     'Depth of the network to train (50, 101, 152, 200), or number of layers'
@@ -111,7 +114,8 @@ def main(_):
           FLAGS.split_name,
           FLAGS.batch_size,
           dataset_dir=FLAGS.dataset_dir,
-          is_training=True)
+          is_training=True,
+          image_size=FLAGS.image_size)
       images, labels, examples_per_epoch, num_classes = data_tuple
 
       # Define the model:

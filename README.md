@@ -90,7 +90,7 @@ mkdir -p models && curl https://s3.us-east-2.amazonaws.com/sact-models/imagenet_
 
 Evaluate the pretrained model
 ``` bash
-python imagenet_eval.py --model_type=sact --model=101 --tau=0.005 --checkpoint_dir=models/imagenet_101_sact_5e-3/train --eval_dir=/tmp --evaluate_once
+python imagenet_eval.py --model_type=sact --model=101 --tau=0.005 --checkpoint_dir=models/imagenet_101_sact_5e-3 --eval_dir=/tmp --evaluate_once
 ```
 
 Expected output:
@@ -108,7 +108,7 @@ Add the arguments `--num_examples=10 --batch_size=10` for a quicker test.
 Draw some images from ImageNet validation set and the corresponding ponder cost maps:
 
 ``` bash
-python imagenet_export.py --model_type=sact --model=101 --tau=0.005 --checkpoint_dir=models/imagenet_101_sact_5e-3/train --export_path=/tmp/maps.h5 --batch_size=1 --num_examples=200
+python imagenet_export.py --model_type=sact --model=101 --tau=0.005 --checkpoint_dir=models/imagenet_101_sact_5e-3 --export_path=/tmp/maps.h5 --batch_size=1 --num_examples=200
 
 mkdir /tmp/maps
 python draw_ponder_maps.py --input_file=/tmp/maps.h5 --output_dir=/tmp/maps
@@ -121,6 +121,20 @@ Image                      | Ponder cost map
 ![](pics/20.92_93_im.jpg)  | ![](pics/20.92_93_ponder.png)
 ![](pics/22.28_95_im.jpg)  | ![](pics/22.28_95_ponder.png)
 ![](pics/26.75_36_im.jpg)  | ![](pics/26.75_36_ponder.png)
+
+Apply the pretrained model to your own jpeg images.
+For best results, first resize them to somewhere between 320x240 and 640x480.
+
+``` bash
+python2 imagenet_ponder_map.py --model=101 --checkpoint_dir=models/imagenet_101_sact_5e-3 --images_pattern=pics/gasworks.jpg --output_dir output/
+```
+
+Image                 | Ponder cost map                | Colorbar
+:--------------------:|:------------------------------:|---------
+![](pics/gasworks.jpg)| ![](pics/gasworks_ponder.jpg)  | ![](pics/gasworks_colorbar.jpg)
+![](pics/cat.jpg)     | ![](pics/cat_ponder.jpg)       | ![](pics/cat_colorbar.jpg)
+
+Note that an ImageNet-pretrained model tends to ignore people - there is no "person" class in ImageNet!
 
 ## Disclaimer
 

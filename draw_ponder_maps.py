@@ -45,8 +45,8 @@ def main(_):
   ponder_cost = np.array(f['ponder_cost_map'])
   min_ponder = np.percentile(ponder_cost.ravel(), 0.1)
   max_ponder = np.percentile(ponder_cost.ravel(), 99.9)
-  print('1st percentile of ponder cost {:.2f} '.format(min_ponder))
-  print('99th percentile of ponder cost {:.2f} '.format(max_ponder))
+  print('0.1st percentile of ponder cost {:.2f} '.format(min_ponder))
+  print('99.9th percentile of ponder cost {:.2f} '.format(max_ponder))
 
   fig = plt.figure(figsize=(0.2, 2))
   ax = fig.add_axes([0.0, 0.0, 1.0, 1.0])

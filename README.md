@@ -41,7 +41,7 @@ nosetests --logging-level=WARNING
 Download and convert CIFAR-10 dataset:
 
 ``` bash
-python external/download_and_convert_data.py --dataset_name=cifar10 --dataset_dir="${HOME}/tensorflow/data/cifar10"
+PYTHONPATH=external python external/download_and_convert_cifar10.py --dataset_dir="${HOME}/tensorflow/data/cifar10"
 ```
 
 Let's train and continuously evaluate a CIFAR-10 Adaptive Computation Time model with five residual units per block (ResNet-32):

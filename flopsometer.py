@@ -42,7 +42,7 @@ def conv2d(inputs, num_outputs, kernel_size, *args, **kwargs):
     num_outputs: The number of output channels for the convolution.
     kernel_size: Spatial size of the convolution kernel.
     *args:       Additional position arguments forwarded to slim.conv2d.
-    **kwargs:    Additional keywork args forwarded to slim.conv2d.
+    **kwargs:    Additional keyword args forwarded to slim.conv2d.
   Returns:
     outputs:     The result of the convolution from slim.conv2d.
     flops:       The operation count as a scalar integer tensor.

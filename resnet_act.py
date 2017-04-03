@@ -104,7 +104,8 @@ def unit_act(block,
 
     if not skip_halting_proba and unit_idx < len(block.args) - 1:
       if sact:
-        halting_proba, current_flops = get_halting_proba_conv(outputs)
+        halting_proba, current_flops = get_halting_proba_conv(
+            outputs, residual_mask)
         flops += current_flops
       else:
         halting_proba, current_flops = get_halting_proba(outputs)

@@ -83,6 +83,8 @@ Follow the [instructions](https://github.com/tensorflow/models/tree/master/incep
 The default directory for the dataset is `~/tensorflow/imagenet`.
 You can change it with the `--dataset_dir` flag.
 
+We initialized all ACT/SACT models with a [pretrained ResNet-101 model](https://s3.us-east-2.amazonaws.com/sact-models/imagenet_101.tar.gz) (159MB file).
+
 Download [pretrained ResNet-101 SACT model](https://s3.us-east-2.amazonaws.com/sact-models/imagenet_101_sact_5e-3.tar.gz), trained with tau=0.005 (160 MB file):
 ``` bash
 mkdir -p models && curl https://s3.us-east-2.amazonaws.com/sact-models/imagenet_101_sact_5e-3.tar.gz | tar xv -C models

@@ -79,7 +79,7 @@ Total Flops/std[7588926]
 
 ## ImageNet
 
-Follow the [instructions](https://github.com/tensorflow/models/tree/master/inception#getting-started) to prepare the ImageNet dataset in TF-Slim format.
+Follow the [instructions](https://github.com/tensorflow/models/tree/master/research/inception#getting-started) to prepare the ImageNet dataset in TF-Slim format.
 The default directory for the dataset is `~/tensorflow/imagenet`.
 You can change it with the `--dataset_dir` flag.
 
